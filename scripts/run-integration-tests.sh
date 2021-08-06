@@ -2,6 +2,7 @@
 
 set -Euo pipefail
 
+echo "Running integration tests with new PR"
 trap 'on_error $LINENO' ERR
 
 DIR=$(cd "$(dirname "$0")"; pwd)
