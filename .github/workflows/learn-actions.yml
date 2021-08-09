@@ -9,7 +9,7 @@ on:
       - master
 jobs:
   labeler:
-    if: | # Add/re-Add 'testing-disabled' label anytime there's a commit or PR is opened
+    if: | # Add/re-Add 'testing-disabled' label whenever there's a commit or PR is opened
       github.event.action == 'opened' ||
       github.event.action == 'synchronize' ||
       github.event.action == 'reopened'
