@@ -1,6 +1,25 @@
 name: GitHub Actions Demo
-on: [push]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [ unlabeled, opened, synchronize, reopened ]
+    branches:
+      - master
 jobs:
+  labeler:
+    if: | # Add/re-Add 'testing-disabled' label anytime there's a commit or PR is opened
+      github.event.action == 'opened' ||
+      github.event.action == 'synchronize' ||
+      github.event.action == 'reopened'
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v3
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
     steps:
