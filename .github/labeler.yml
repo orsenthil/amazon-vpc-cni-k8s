@@ -1,2 +1,6 @@
 test-disabled:
-  - '*'
+  - '**'      # index.php | src/main.php
+  - '.*'      # .gitignore
+  - '.*/**'   # .github/workflows/label.yml
+
+# https://github.com/actions/labeler/issues/28
