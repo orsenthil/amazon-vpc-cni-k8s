@@ -200,6 +200,9 @@ type APIs interface {
 
 	// FetchInstanceTypeLimits Verify if the InstanceNetworkingLimits has the ENI limits else make EC2 call to fill cache.
 	FetchInstanceTypeLimits() error
+
+	//ValidateSecurityGroups Validate a list of security group ids before they are used to create ENIs
+	ValidateSecurityGroups(securityGroupIds []string) error
 }
 
 // EC2InstanceMetadataCache caches instance metadata
@@ -727,6 +730,19 @@ func (cache *EC2InstanceMetadataCache) awsGetFreeDeviceNumber() (int, error) {
 // AllocENI creates an ENI and attaches it to the instance
 // returns: newly created ENI ID
 func (cache *EC2InstanceMetadataCache) AllocENI(useCustomCfg bool, sg []*string, subnet string) (string, error) {
+	var sgIds []string
+
+	for _, sgId := range sg {
+		sgIds = append(sgIds, *sgId)
+	}
+
+	err := cache.ValidateSecurityGroups(sgIds)
+
+	if err != nil {
+		log.Errorf("AllocENI: Security Groups are Invalid: %v", sgIds)
+		return "", err
+	}
+
 	eniID, err := cache.createENI(useCustomCfg, sg, subnet)
 	if err != nil {
 		return "", errors.Wrap(err, "AllocENI: failed to create ENI")
@@ -888,6 +904,27 @@ func (cache *EC2InstanceMetadataCache) TagENI(eniID string, currentTags map[stri
 		log.Debugf("Successfully tagged ENI: %s", eniID)
 		return nil
 	})
+}
+
+func (cache *EC2InstanceMetadataCache) ValidateSecurityGroups(securityGroupIds []string) error {
+
+	_, err := cache.ec2SVC.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+		GroupIds: aws.StringSlice(securityGroupIds),
+	})
+
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case "InvalidGroupId.Malformed":
+				fallthrough
+			case "InvalidGroup.NotFound":
+				return errors.Wrap(err, "Invalid Security Group Id")
+			}
+		}
+		return errors.Wrap(err, "Invalid Security Group Id")
+	}
+
+	return nil
 }
 
 // containsPrivateIPAddressLimitExceededError returns whether exceeds ENI's IP address limit

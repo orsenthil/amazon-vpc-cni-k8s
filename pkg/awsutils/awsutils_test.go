@@ -356,6 +356,9 @@ func TestAllocENI(t *testing.T) {
 
 	mockMetadata := testMetadata(nil)
 
+	sgresult := &ec2.DescribeSecurityGroupsOutput{}
+	mockEC2.EXPECT().DescribeSecurityGroups(gomock.Any()).Return(sgresult, nil)
+
 	cureniID := eniID
 	eni := ec2.CreateNetworkInterfaceOutput{NetworkInterface: &ec2.NetworkInterface{NetworkInterfaceId: &cureniID}}
 	mockEC2.EXPECT().CreateNetworkInterfaceWithContext(gomock.Any(), gomock.Any(), gomock.Any()).Return(&eni, nil)
@@ -388,11 +391,41 @@ func TestAllocENI(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestAllocENIInvalidSG(t *testing.T) {
+	ctrl, mockEC2 := setup(t)
+	defer ctrl.Finish()
+
+	sgids := []string{"sg-123", "invalid-sg"}
+
+	sg := []*string{}
+
+	for _, sgid := range sgids {
+		sg = append(sg, aws.String(sgid))
+	}
+
+	mockMetadata := testMetadata(nil)
+
+	mockEC2.EXPECT().DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+		GroupIds: aws.StringSlice(sgids),
+	}).Return(nil, errors.New("Invalid Security Group."))
+
+	ins := &EC2InstanceMetadataCache{
+		ec2SVC: mockEC2,
+		imds:   TypedIMDS{mockMetadata},
+	}
+
+	_, err := ins.AllocENI(false, sg, "")
+	assert.Error(t, err)
+}
+
 func TestAllocENINoFreeDevice(t *testing.T) {
 	ctrl, mockEC2 := setup(t)
 	defer ctrl.Finish()
 
 	mockMetadata := testMetadata(nil)
+
+	sgresult := &ec2.DescribeSecurityGroupsOutput{}
+	mockEC2.EXPECT().DescribeSecurityGroups(gomock.Any()).Return(sgresult, nil)
 
 	cureniID := eniID
 	eni := ec2.CreateNetworkInterfaceOutput{NetworkInterface: &ec2.NetworkInterface{NetworkInterfaceId: &cureniID}}
@@ -426,6 +459,9 @@ func TestAllocENIMaxReached(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockMetadata := testMetadata(nil)
+
+	sgresult := &ec2.DescribeSecurityGroupsOutput{}
+	mockEC2.EXPECT().DescribeSecurityGroups(gomock.Any()).Return(sgresult, nil)
 
 	cureniID := eniID
 	eni := ec2.CreateNetworkInterfaceOutput{NetworkInterface: &ec2.NetworkInterface{NetworkInterfaceId: &cureniID}}
