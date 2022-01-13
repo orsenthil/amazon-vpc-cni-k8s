@@ -907,14 +907,6 @@ func (cache *EC2InstanceMetadataCache) ValidateSecurityGroups(securityGroupIds [
 	})
 
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case "InvalidGroupId.Malformed":
-				fallthrough
-			case "InvalidGroup.NotFound":
-				return errors.Wrap(err, "Invalid Security Group Id")
-			}
-		}
 		return errors.Wrap(err, "Invalid Security Group Id")
 	}
 
