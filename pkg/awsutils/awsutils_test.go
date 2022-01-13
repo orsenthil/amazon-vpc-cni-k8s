@@ -396,17 +396,12 @@ func TestAllocENIInvalidSG(t *testing.T) {
 	defer ctrl.Finish()
 
 	sgids := []string{"sg-123", "invalid-sg"}
-
-	sg := []*string{}
-
-	for _, sgid := range sgids {
-		sg = append(sg, aws.String(sgid))
-	}
+	sg := aws.StringSlice(sgids)
 
 	mockMetadata := testMetadata(nil)
 
 	mockEC2.EXPECT().DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-		GroupIds: aws.StringSlice(sgids),
+		GroupIds: sg,
 	}).Return(nil, errors.New("Invalid Security Group."))
 
 	ins := &EC2InstanceMetadataCache{

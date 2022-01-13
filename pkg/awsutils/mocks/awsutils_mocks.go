@@ -19,12 +19,11 @@
 package mock_awsutils
 
 import (
-	net "net"
-	reflect "reflect"
-
 	awsutils "github.com/aws/amazon-vpc-cni-k8s/pkg/awsutils"
 	ec2 "github.com/aws/aws-sdk-go/service/ec2"
 	gomock "github.com/golang/mock/gomock"
+	net "net"
+	reflect "reflect"
 )
 
 // MockAPIs is a mock of APIs interface
@@ -490,7 +489,7 @@ func (mr *MockAPIsMockRecorder) TagENI(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // ValidateSecurityGroups mocks base method
-func (m *MockAPIs) ValidateSecurityGroups(arg0 []string) error {
+func (m *MockAPIs) ValidateSecurityGroups(arg0 []*string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidateSecurityGroups", arg0)
 	ret0, _ := ret[0].(error)
