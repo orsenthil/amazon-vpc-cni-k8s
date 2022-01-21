@@ -202,7 +202,7 @@ type APIs interface {
 	FetchInstanceTypeLimits() error
 
 	//ValidateSecurityGroups Validate a list of security group ids before they are used to create ENIs
-	ValidateSecurityGroups(securityGroupIds []*string) error
+	ValidateSecurityGroups(securityGroupIds []string) error
 }
 
 // EC2InstanceMetadataCache caches instance metadata
@@ -493,7 +493,7 @@ func (cache *EC2InstanceMetadataCache) initWithEC2Metadata(ctx context.Context) 
 	return nil
 }
 
-// RefreshSGIDs retrieves security groups
+// RefreshSGIDs retrieves security groups attached to the interface
 func (cache *EC2InstanceMetadataCache) RefreshSGIDs(mac string) error {
 	ctx := context.TODO()
 
@@ -730,13 +730,6 @@ func (cache *EC2InstanceMetadataCache) awsGetFreeDeviceNumber() (int, error) {
 // AllocENI creates an ENI and attaches it to the instance
 // returns: newly created ENI ID
 func (cache *EC2InstanceMetadataCache) AllocENI(useCustomCfg bool, sg []*string, subnet string) (string, error) {
-	err := cache.ValidateSecurityGroups(sg)
-
-	if err != nil {
-		log.Errorf("Security Groups are Invalid: %v", sg)
-		return "", errors.Wrap(err, "AllocENI: Security Groups are Invalid.")
-	}
-
 	eniID, err := cache.createENI(useCustomCfg, sg, subnet)
 	if err != nil {
 		return "", errors.Wrap(err, "AllocENI: failed to create ENI")
@@ -900,10 +893,9 @@ func (cache *EC2InstanceMetadataCache) TagENI(eniID string, currentTags map[stri
 	})
 }
 
-func (cache *EC2InstanceMetadataCache) ValidateSecurityGroups(securityGroupIds []*string) error {
-
+func (cache *EC2InstanceMetadataCache) ValidateSecurityGroups(securityGroups []string) error {
 	_, err := cache.ec2SVC.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-		GroupIds: securityGroupIds,
+		GroupIds: aws.StringSlice(securityGroups),
 	})
 
 	if err != nil {
