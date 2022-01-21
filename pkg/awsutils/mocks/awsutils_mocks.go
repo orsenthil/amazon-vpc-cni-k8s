@@ -490,7 +490,7 @@ func (mr *MockAPIsMockRecorder) TagENI(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // ValidateSecurityGroups mocks base method
-func (m *MockAPIs) ValidateSecurityGroups(arg0 []*string) error {
+func (m *MockAPIs) ValidateSecurityGroups(arg0 []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidateSecurityGroups", arg0)
 	ret0, _ := ret[0].(error)
