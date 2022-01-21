@@ -105,6 +105,7 @@ func TestNodeInit(t *testing.T) {
 	m := setup(t)
 	defer m.ctrl.Finish()
 	ctx := context.Background()
+	var eniCfg *v1alpha1.ENIConfigSpec
 
 	fakeCheckpoint := datastore.CheckpointData{
 		Version: datastore.CheckpointFormatVersion,
@@ -134,6 +135,7 @@ func TestNodeInit(t *testing.T) {
 	eni1, eni2, _ := getDummyENIMetadata()
 
 	var cidrs []string
+
 	m.awsutils.EXPECT().GetENILimit().Return(4)
 	m.awsutils.EXPECT().GetENIIPv4Limit().Return(14)
 	m.awsutils.EXPECT().GetIPv4sFromEC2(eni1.ENIID).AnyTimes().Return(eni1.IPv4Addresses, nil)
@@ -143,6 +145,9 @@ func TestNodeInit(t *testing.T) {
 	m.awsutils.EXPECT().TagENI(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	m.awsutils.EXPECT().IsCNIUnmanagedENI(eni1.ENIID).Return(false).AnyTimes()
 	m.awsutils.EXPECT().IsCNIUnmanagedENI(eni2.ENIID).Return(false).AnyTimes()
+
+	m.eniconfig.EXPECT().MyENIConfig(m.cachedK8SClient).Return(eniCfg, nil)
+	m.awsutils.EXPECT().ValidateSecurityGroups(m.eniconfig).Return(nil)
 
 	primaryIP := net.ParseIP(ipaddr01)
 	m.awsutils.EXPECT().GetVPCIPv4CIDRs().AnyTimes().Return(cidrs, nil)
