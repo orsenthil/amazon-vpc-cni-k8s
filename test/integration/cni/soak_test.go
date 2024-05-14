@@ -14,10 +14,11 @@
 package cni
 
 import (
-	"github.com/aws/amazon-vpc-cni-k8s/test/framework/utils"
-	"github.com/aws/amazon-vpc-cni-k8s/test/integration/common"
 	"strconv"
 	"time"
+
+	"github.com/aws/amazon-vpc-cni-k8s/test/framework/utils"
+	"github.com/aws/amazon-vpc-cni-k8s/test/integration/common"
 
 	"github.com/aws/amazon-vpc-cni-k8s/test/framework/resources/k8s/manifest"
 
@@ -165,7 +166,7 @@ var _ = Describe("SOAK Test pod networking", func() {
 
 	for i := 0; i < timesToRunSoakTest; i++ {
 
-		Context("[SOAK] when establishing TCP connection from tester to server", func() {
+		Context("[SOAK_TEST] when establishing TCP connection from tester to server", func() {
 
 			BeforeEach(func() {
 				serverPort = 2273
