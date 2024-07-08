@@ -277,7 +277,7 @@ func CheckAPIServerConnectivityFromPods(azToPod map[string]coreV1.Pod, azToazId 
 
 		bearer := fmt.Sprintf("Authorization: Bearer %s", token_value)
 
-		test_api_server_connectivity := []string{"curl", "--cacert", cacert, "--header", bearer, "-X", "GET",
+		test_api_server_connectivity := []string{"curl", "--connect-timeout", "10", "--cacert", cacert, "--header", bearer, "-X", "GET",
 			api_server_url,
 		}
 
