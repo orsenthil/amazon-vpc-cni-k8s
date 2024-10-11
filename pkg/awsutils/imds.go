@@ -16,6 +16,7 @@ package awsutils
 import (
 	"context"
 	"fmt"
+	"github.com/aws/smithy-go"
 	"net"
 	"net/http"
 	"strconv"
@@ -416,12 +417,21 @@ func (imds TypedIMDS) GetSubnetIPv6CIDRBlocks(ctx context.Context, mac string) (
 
 // IsNotFound returns true if the error was caused by an AWS API 404 response.
 func IsNotFound(err error) bool {
-	if err != nil {
-		var aerr awserr.RequestFailure
-		if errors.As(err, &aerr) {
-			return aerr.StatusCode() == http.StatusNotFound
+	if err == nil {
+		return false
+	}
+
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) {
+		// Check if the APIError also implements HTTPStatusCode() int
+		type httpStatusCoder interface {
+			HTTPStatusCode() int
+		}
+		if sc, ok := apiErr.(httpStatusCoder); ok {
+			return sc.HTTPStatusCode() == http.StatusNotFound
 		}
 	}
+
 	return false
 }
 
