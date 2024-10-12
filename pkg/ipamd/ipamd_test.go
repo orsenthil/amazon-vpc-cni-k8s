@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/aws/smithy-go"
 	"net"
 	"os"
 	"reflect"
@@ -25,7 +26,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/golang/mock/gomock"
 	"github.com/samber/lo"
@@ -626,11 +626,21 @@ func assertAllocationExternalCalls(shouldCall bool, useENIConfig bool, m *testMo
 		callCount = 1
 	}
 
+	originalErr := errors.New("err")
+
 	if useENIConfig {
 		m.awsutils.EXPECT().AllocENI(true, sg, podENIConfig.Subnet, 14).Times(callCount).Return(eni2, nil)
 	} else if subnetDiscovery {
-		m.awsutils.EXPECT().AllocIPAddresses(primaryENIid, 14).Times(callCount).Return(nil, awserr.New("InsufficientFreeAddressesInSubnet", "", errors.New("err")))
-		m.awsutils.EXPECT().AllocIPAddresses(primaryENIid, 1).Times(callCount).Return(nil, awserr.New("InsufficientFreeAddressesInSubnet", "", errors.New("err")))
+		m.awsutils.EXPECT().AllocIPAddresses(primaryENIid, 14).Times(callCount).Return(nil, &smithy.GenericAPIError{
+			Code:    "InsufficientFreeAddressesInSubnet",
+			Message: originalErr.Error(),
+			Fault:   smithy.FaultUnknown,
+		})
+		m.awsutils.EXPECT().AllocIPAddresses(primaryENIid, 1).Times(callCount).Return(nil, &smithy.GenericAPIError{
+			Code:    "InsufficientFreeAddressesInSubnet",
+			Message: originalErr.Error(),
+			Fault:   smithy.FaultUnknown,
+		})
 		m.awsutils.EXPECT().AllocENI(false, nil, "", 14).Times(callCount).Return(eni2, nil)
 	} else {
 		m.awsutils.EXPECT().AllocENI(false, nil, "", 14).Times(callCount).Return(eni2, nil)
@@ -698,12 +708,20 @@ func testIncreasePrefixPool(t *testing.T, useENIConfig, subnetDiscovery bool) {
 	for _, sgID := range podENIConfig.SecurityGroups {
 		sg = append(sg, aws.String(sgID))
 	}
-
+	originalErr := errors.New("err")
 	if useENIConfig {
 		m.awsutils.EXPECT().AllocENI(true, sg, podENIConfig.Subnet, 1).Return(eni2, nil)
 	} else if subnetDiscovery {
-		m.awsutils.EXPECT().AllocIPAddresses(primaryENIid, 1).Return(nil, awserr.New("InsufficientFreeAddressesInSubnet", "", errors.New("err")))
-		m.awsutils.EXPECT().AllocIPAddresses(primaryENIid, 1).Return(nil, awserr.New("InsufficientFreeAddressesInSubnet", "", errors.New("err")))
+		m.awsutils.EXPECT().AllocIPAddresses(primaryENIid, 1).Return(nil, &smithy.GenericAPIError{
+			Code:    "InsufficientFreeAddressesInSubnet",
+			Message: originalErr.Error(),
+			Fault:   smithy.FaultUnknown,
+		})
+		m.awsutils.EXPECT().AllocIPAddresses(primaryENIid, 1).Return(nil, &smithy.GenericAPIError{
+			Code:    "InsufficientFreeAddressesInSubnet",
+			Message: originalErr.Error(),
+			Fault:   smithy.FaultUnknown,
+		})
 		m.awsutils.EXPECT().AllocENI(false, nil, "", 1).Return(eni2, nil)
 	} else {
 		m.awsutils.EXPECT().AllocENI(false, nil, "", 1).Return(eni2, nil)
