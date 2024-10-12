@@ -22,7 +22,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/pkg/errors"
 )
 
@@ -438,6 +437,39 @@ func IsNotFound(err error) bool {
 // FakeIMDS is a trivial implementation of EC2MetadataIface using an in-memory map - for testing.
 type FakeIMDS map[string]interface{}
 
+// Custom error type
+type CustomRequestFailure struct {
+	code       string
+	message    string
+	fault      smithy.ErrorFault
+	statusCode int
+	requestID  string
+}
+
+func (e *CustomRequestFailure) Error() string {
+	return fmt.Sprintf("%s: %s", e.code, e.message)
+}
+
+func (e *CustomRequestFailure) ErrorCode() string {
+	return e.code
+}
+
+func (e *CustomRequestFailure) ErrorMessage() string {
+	return e.message
+}
+
+func (e *CustomRequestFailure) ErrorFault() smithy.ErrorFault {
+	return e.fault
+}
+
+func (e *CustomRequestFailure) HTTPStatusCode() int {
+	return e.statusCode
+}
+
+func (e *CustomRequestFailure) RequestID() string {
+	return e.requestID
+}
+
 // GetMetadataWithContext implements the EC2MetadataIface interface.
 func (f FakeIMDS) GetMetadataWithContext(ctx context.Context, p string) (string, error) {
 	result, ok := f[p]
@@ -445,7 +477,13 @@ func (f FakeIMDS) GetMetadataWithContext(ctx context.Context, p string) (string,
 		result, ok = f[p+"/"] // Metadata API treats foo/ as foo
 	}
 	if !ok {
-		notFoundErr := awserr.NewRequestFailure(awserr.New("NotFound", "not found", nil), http.StatusNotFound, "dummy-reqid")
+		notFoundErr := &CustomRequestFailure{
+			code:       "NotFound",
+			message:    "not found",
+			fault:      smithy.FaultUnknown,
+			statusCode: http.StatusNotFound,
+			requestID:  "dummy-reqid",
+		}
 		return "", newIMDSRequestError(p, notFoundErr)
 	}
 	switch v := result.(type) {
