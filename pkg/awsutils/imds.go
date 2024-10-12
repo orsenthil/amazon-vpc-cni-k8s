@@ -16,11 +16,12 @@ package awsutils
 import (
 	"context"
 	"fmt"
-	"github.com/aws/smithy-go"
 	"net"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/aws/smithy-go"
 
 	"github.com/pkg/errors"
 )

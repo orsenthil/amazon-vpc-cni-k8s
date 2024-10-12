@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/aws/smithy-go"
 	"math/rand"
 	"net"
 	"os"
@@ -27,6 +26,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/aws/smithy-go"
 
 	"github.com/aws/amazon-vpc-cni-k8s/pkg/ipamd/datastore"
 

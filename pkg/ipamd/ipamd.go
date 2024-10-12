@@ -16,7 +16,6 @@ package ipamd
 import (
 	"context"
 	"fmt"
-	"github.com/aws/smithy-go"
 	"net"
 	"os"
 	"strconv"
@@ -24,6 +23,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/aws/smithy-go"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 

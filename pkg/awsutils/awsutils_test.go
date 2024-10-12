@@ -17,12 +17,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/aws/smithy-go"
 	"os"
 	"reflect"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/aws/smithy-go"
 
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/ec2"
