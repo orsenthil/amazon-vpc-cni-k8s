@@ -341,19 +341,6 @@ func awsReqStatus(err error) string {
 	return "" // Unknown HTTP status code
 }
 
-/**
-func awsReqStatusV1(err error) string {
-	if err == nil {
-		return "200"
-	}
-	var aerr awserr.RequestFailure
-	if errors.As(err, &aerr) {
-		return fmt.Sprint(aerr.StatusCode())
-	}
-	return "" // Unknown HTTP status code
-}
-**/
-
 func (i instrumentedIMDS) GetMetadataWithContext(ctx context.Context, p string) (string, error) {
 	start := time.Now()
 	result, err := i.EC2MetadataIface.GetMetadataWithContext(ctx, p)
