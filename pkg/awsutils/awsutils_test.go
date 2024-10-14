@@ -337,14 +337,14 @@ func TestGetENIAttachmentID(t *testing.T) {
 		{
 			"not found error",
 			nil,
-			&smithy.GenericAPIError{"InvalidNetworkInterfaceID.NotFound", "not found", 0},
+			&smithy.GenericAPIError{Code: "InvalidNetworkInterfaceID.NotFound", Message: "not found", Fault: 0},
 			nil,
 			ErrENINotFound,
 		},
 		{
 			"not found error",
 			nil,
-			&smithy.GenericAPIError{"InvalidNetworkInterfaceID.NotFound", "", 0},
+			&smithy.GenericAPIError{Code: "InvalidNetworkInterfaceID.NotFound", Message: "", Fault: 0},
 			nil,
 			ErrENINotFound,
 		},

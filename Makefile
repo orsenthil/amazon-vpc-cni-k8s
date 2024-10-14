@@ -329,7 +329,7 @@ helm-lint:
 # Run go vet on source code.
 vet: setup-ec2-sdk-override ## Run go vet on source code.
 	@echo "skipping vet."
-	#go vet $(VENDOR_OVERRIDE_FLAG) $(ALLPKGS)
+	go vet $(VENDOR_OVERRIDE_FLAG) $(ALLPKGS)
 
 
 docker-vet: build-docker-test   ## Run go vet inside of a container.
