@@ -360,7 +360,7 @@ func New(useSubnetDiscovery, useCustomNetworking, disableLeakedENICleanup, v4Ena
 	// ctx is passed to initWithEC2Metadata func to cancel spawned go-routines when tests are run
 	ctx := context.Background()
 
-	sess := awssession.New()
+	sess := awssession.NewV1()
 	ec2Metadata := ec2metadata.New(sess)
 	cache := &EC2InstanceMetadataCache{}
 	cache.imds = TypedIMDS{instrumentedIMDS{ec2Metadata}}

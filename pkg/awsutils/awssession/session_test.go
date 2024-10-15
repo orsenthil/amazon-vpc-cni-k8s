@@ -29,7 +29,7 @@ func TestAwsEc2EndpointResolver(t *testing.T) {
 	os.Setenv("AWS_EC2_ENDPOINT", customEndpoint)
 	defer os.Unsetenv("AWS_EC2_ENDPOINT")
 
-	sess := New()
+	sess := NewV1()
 
 	resolvedEndpoint, err := sess.Config.EndpointResolver.EndpointFor(ec2.EndpointsID, "")
 	assert.NoError(t, err)

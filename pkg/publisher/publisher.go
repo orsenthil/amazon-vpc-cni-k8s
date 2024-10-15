@@ -88,7 +88,7 @@ type cloudWatchPublisher struct {
 // not specified clusterID then its a Cx error
 // New returns a new instance of `Publisher`
 func New(ctx context.Context, region string, clusterID string, log logger.Logger) (Publisher, error) {
-	sess := awssession.New()
+	sess := awssession.NewV1()
 
 	// If Customers have explicitly specified clusterID then skip generating it
 	if clusterID == "" {

@@ -23,11 +23,11 @@ import (
 
 	"github.com/aws/amazon-vpc-cni-k8s/pkg/utils/logger"
 	"github.com/aws/amazon-vpc-cni-k8s/utils"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/endpoints"
-	"github.com/aws/aws-sdk-go/aws/request"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	awsv1 "github.com/aws/aws-sdk-go/aws"
+	endpointsv1 "github.com/aws/aws-sdk-go/aws/endpoints"
+	requestv1 "github.com/aws/aws-sdk-go/aws/request"
+	sessionv1 "github.com/aws/aws-sdk-go/aws/session"
+	ec2v1 "github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // Http client timeout env for sessions
@@ -58,30 +58,30 @@ func getHTTPTimeout() time.Duration {
 	return httpTimeoutValue
 }
 
-// New will return an session for service clients
-func New() *session.Session {
-	awsCfg := aws.Config{
-		MaxRetries: aws.Int(maxRetries),
+// NewV1 will return an session for service clients
+func NewV1() *sessionv1.Session {
+	awsCfg := awsv1.Config{
+		MaxRetries: awsv1.Int(maxRetries),
 		HTTPClient: &http.Client{
 			Timeout: getHTTPTimeout(),
 		},
-		STSRegionalEndpoint: endpoints.RegionalSTSEndpoint,
+		STSRegionalEndpoint: endpointsv1.RegionalSTSEndpoint,
 	}
 
 	endpoint := os.Getenv("AWS_EC2_ENDPOINT")
 	if endpoint != "" {
-		customResolver := func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
-			if service == ec2.EndpointsID {
-				return endpoints.ResolvedEndpoint{
+		customResolver := func(service, region string, optFns ...func(*endpointsv1.Options)) (endpointsv1.ResolvedEndpoint, error) {
+			if service == ec2v1.EndpointsID {
+				return endpointsv1.ResolvedEndpoint{
 					URL: endpoint,
 				}, nil
 			}
-			return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
+			return endpointsv1.DefaultResolver().EndpointFor(service, region, optFns...)
 		}
-		awsCfg.EndpointResolver = endpoints.ResolverFunc(customResolver)
+		awsCfg.EndpointResolver = endpointsv1.ResolverFunc(customResolver)
 	}
 
-	sess := session.Must(session.NewSession(&awsCfg))
+	sess := sessionv1.Must(sessionv1.NewSession(&awsCfg))
 	//injecting session handler info
 	injectUserAgent(&sess.Handlers)
 
@@ -89,11 +89,11 @@ func New() *session.Session {
 }
 
 // injectUserAgent will inject app specific user-agent into awsSDK
-func injectUserAgent(handlers *request.Handlers) {
+func injectUserAgent(handlers *requestv1.Handlers) {
 	version := utils.GetEnv(envVpcCniVersion, "")
-	handlers.Build.PushFrontNamed(request.NamedHandler{
+	handlers.Build.PushFrontNamed(requestv1.NamedHandler{
 		Name: fmt.Sprintf("%s/user-agent", "amazon-vpc-cni-k8s"),
-		Fn: request.MakeAddToUserAgentHandler(
+		Fn: requestv1.MakeAddToUserAgentHandler(
 			"amazon-vpc-cni-k8s",
 			"version/"+version),
 	})
