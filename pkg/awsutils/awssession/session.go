@@ -20,6 +20,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/retry"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/smithy-go"
+	smithymiddleware "github.com/aws/smithy-go/middleware"
+	smithyhttp "github.com/aws/smithy-go/transport/http"
 	"net/http"
 	"os"
 
@@ -72,6 +75,7 @@ func New(ctx context.Context) (aws.Config, error) {
 		config.WithRetryer(func() aws.Retryer {
 			return retry.NewStandard()
 		}),
+		injectUserAgent,
 	}
 
 	endpoint := os.Getenv("AWS_EC2_ENDPOINT")
@@ -125,13 +129,13 @@ func NewV1() *sessionv1.Session {
 
 	sess := sessionv1.Must(sessionv1.NewSession(&awsCfg))
 	//injecting session handler info
-	injectUserAgent(&sess.Handlers)
+	injectUserAgentV1(&sess.Handlers)
 
 	return sess
 }
 
 // injectUserAgent will inject app specific user-agent into awsSDK
-func injectUserAgent(handlers *requestv1.Handlers) {
+func injectUserAgentV1(handlers *requestv1.Handlers) {
 	version := utils.GetEnv(envVpcCniVersion, "")
 	handlers.Build.PushFrontNamed(requestv1.NamedHandler{
 		Name: fmt.Sprintf("%s/user-agent", "amazon-vpc-cni-k8s"),
@@ -139,4 +143,49 @@ func injectUserAgent(handlers *requestv1.Handlers) {
 			"amazon-vpc-cni-k8s",
 			"version/"+version),
 	})
+}
+
+// injectUserAgent will inject app specific user-agent into awsSDK
+func injectUserAgent(loadOptions *config.LoadOptions) error {
+	version := utils.GetEnv(envVpcCniVersion, "")
+	userAgent := fmt.Sprintf("amazon-vpc-cni-k8s/version/%s", version)
+
+	loadOptions.APIOptions = append(loadOptions.APIOptions, func(stack *smithymiddleware.Stack) error {
+		return stack.Build.Add(&addUserAgentMiddleware{
+			userAgent: userAgent,
+		}, smithymiddleware.After)
+	})
+
+	return nil
+}
+
+type addUserAgentMiddleware struct {
+	userAgent string
+}
+
+func (m *addUserAgentMiddleware) HandleBuild(ctx context.Context, in smithymiddleware.BuildInput, next smithymiddleware.BuildHandler) (out smithymiddleware.BuildOutput, metadata smithymiddleware.Metadata, err error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *addUserAgentMiddleware) ID() string {
+	return "AddUserAgent"
+}
+
+func (m *addUserAgentMiddleware) HandleFinalize(ctx context.Context, in smithymiddleware.FinalizeInput, next smithymiddleware.FinalizeHandler) (
+	out smithymiddleware.FinalizeOutput, metadata smithymiddleware.Metadata, err error) {
+	req, ok := in.Request.(*smithyhttp.Request)
+	if !ok {
+		return out, metadata, &smithy.SerializationError{Err: fmt.Errorf("unknown request type %T", in.Request)}
+	}
+
+	userAgent := req.Header.Get("User-Agent")
+	if userAgent == "" {
+		userAgent = m.userAgent
+	} else {
+		userAgent += " " + m.userAgent
+	}
+	req.Header.Set("User-Agent", userAgent)
+
+	return next.HandleFinalize(ctx, in)
 }
