@@ -14,7 +14,12 @@
 package awssession
 
 import (
+	"context"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/retry"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"net/http"
 	"os"
 
@@ -56,6 +61,43 @@ func getHTTPTimeout() time.Duration {
 	}
 	log.Warn("HTTP_TIMEOUT env is not set or set to less than 10 seconds, defaulting to httpTimeout to 10sec")
 	return httpTimeoutValue
+}
+
+func New(ctx context.Context) (aws.Config, error) {
+	customHTTPClient := &http.Client{
+		Timeout: getHTTPTimeout()}
+	optFns := []func(*config.LoadOptions) error{
+		config.WithHTTPClient(customHTTPClient),
+		config.WithRetryMaxAttempts(maxRetries),
+		config.WithRetryer(func() aws.Retryer {
+			return retry.NewStandard()
+		}),
+	}
+
+	endpoint := os.Getenv("AWS_EC2_ENDPOINT")
+
+	//TODO (senthilx)  - The endpoint resolver is using deprecated method, this should be moved to the services.
+	if endpoint != "" {
+		optFns = append(optFns, config.WithEndpointResolver(aws.EndpointResolverFunc(
+			func(service, region string) (aws.Endpoint, error) {
+				if service == ec2.ServiceID {
+					return aws.Endpoint{
+						URL: endpoint,
+					}, nil
+				}
+				// Fall back to default resolution
+				return aws.Endpoint{}, &aws.EndpointNotFoundError{}
+			})))
+
+	}
+
+	cfg, err := config.LoadDefaultConfig(ctx, optFns...)
+
+	if err != nil {
+		return aws.Config{}, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+
+	return cfg, nil
 }
 
 // NewV1 will return an session for service clients
