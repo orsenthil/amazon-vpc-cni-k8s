@@ -16,6 +16,9 @@ package awssession
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/retry"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -23,8 +26,6 @@ import (
 	"github.com/aws/smithy-go"
 	smithymiddleware "github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
-	"net/http"
-	"os"
 
 	"strconv"
 	"time"
