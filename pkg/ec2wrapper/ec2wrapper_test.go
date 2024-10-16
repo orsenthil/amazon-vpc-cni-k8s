@@ -37,7 +37,7 @@ func TestGetClusterID(t *testing.T) {
 		},
 	}
 
-	ec2wrap := EC2Wrapper{
+	ec2wrap := EC2WrapperV1{
 		ec2ServiceClient:         mockEC2ServiceClient,
 		instanceIdentityDocument: testInstanceIdentityDocument,
 	}
@@ -52,7 +52,7 @@ func TestGetClusterIDWithError(t *testing.T) {
 		tagsErr: errors.New("test error"),
 	}
 
-	ec2wrap := EC2Wrapper{
+	ec2wrap := EC2WrapperV1{
 		ec2ServiceClient:         mockEC2ServiceClient,
 		instanceIdentityDocument: testInstanceIdentityDocument,
 	}
@@ -69,7 +69,7 @@ func TestGetClusterIDWithInsufficientTags(t *testing.T) {
 		},
 	}
 
-	ec2wrap := EC2Wrapper{
+	ec2wrap := EC2WrapperV1{
 		ec2ServiceClient:         mockEC2ServiceClient,
 		instanceIdentityDocument: testInstanceIdentityDocument,
 	}

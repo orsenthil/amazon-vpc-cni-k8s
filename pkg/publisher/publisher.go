@@ -226,7 +226,7 @@ func (p *cloudWatchPublisher) getCloudWatchMetricNamespace() *string {
 	return aws.String(cloudwatchMetricNamespace)
 }
 
-func getClusterID(ec2Client *ec2wrapper.EC2Wrapper, log logger.Logger) string {
+func getClusterID(ec2Client *ec2wrapper.EC2WrapperV1, log logger.Logger) string {
 	var clusterID string
 	var err error
 	for _, tag := range clusterIDTags {
