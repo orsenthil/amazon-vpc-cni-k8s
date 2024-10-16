@@ -5,10 +5,10 @@ import (
 	"github.com/aws/amazon-vpc-cni-k8s/pkg/awsutils/awssession"
 	"github.com/aws/amazon-vpc-cni-k8s/pkg/ec2metadatawrapper"
 	"github.com/aws/amazon-vpc-cni-k8s/pkg/utils/logger"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	awsv1 "github.com/aws/aws-sdk-go/aws"
+	ec2metadatav1 "github.com/aws/aws-sdk-go/aws/ec2metadata"
+	ec2v1 "github.com/aws/aws-sdk-go/service/ec2"
+	ec2ifacev1 "github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/pkg/errors"
 )
 
@@ -23,12 +23,12 @@ var log = logger.Get()
 // EC2Wrapper is used to wrap around EC2 service APIs to obtain ClusterID from
 // the ec2 instance tags
 type EC2Wrapper struct {
-	ec2ServiceClient         ec2iface.EC2API
-	instanceIdentityDocument ec2metadata.EC2InstanceIdentityDocument
+	ec2ServiceClient         ec2ifacev1.EC2API
+	instanceIdentityDocument ec2metadatav1.EC2InstanceIdentityDocument
 }
 
-// NewMetricsClient returns an instance of the EC2 wrapper
-func NewMetricsClient() (*EC2Wrapper, error) {
+// NewMetricsClientV1 returns an instance of the EC2 wrapper
+func NewMetricsClientV1() (*EC2Wrapper, error) {
 	sess := awssession.NewV1()
 	ec2MetadataClient := ec2metadatawrapper.NewV1(sess)
 
@@ -37,9 +37,9 @@ func NewMetricsClient() (*EC2Wrapper, error) {
 		return &EC2Wrapper{}, err
 	}
 
-	awsCfg := aws.NewConfig().WithRegion(instanceIdentityDocument.Region)
+	awsCfg := awsv1.NewConfig().WithRegion(instanceIdentityDocument.Region)
 	sess = sess.Copy(awsCfg)
-	ec2ServiceClient := ec2.New(sess)
+	ec2ServiceClient := ec2v1.New(sess)
 
 	return &EC2Wrapper{
 		ec2ServiceClient:         ec2ServiceClient,
@@ -47,19 +47,19 @@ func NewMetricsClient() (*EC2Wrapper, error) {
 	}, nil
 }
 
-// GetClusterTag is used to retrieve a tag from the ec2 instance
-func (e *EC2Wrapper) GetClusterTag(tagKey string) (string, error) {
-	input := ec2.DescribeTagsInput{
-		Filters: []*ec2.Filter{
+// GetClusterTagV1 is used to retrieve a tag from the ec2 instance
+func (e *EC2Wrapper) GetClusterTagV1(tagKey string) (string, error) {
+	input := ec2v1.DescribeTagsInput{
+		Filters: []*ec2v1.Filter{
 			{
-				Name: aws.String(resourceID),
+				Name: awsv1.String(resourceID),
 				Values: []*string{
-					aws.String(e.instanceIdentityDocument.InstanceID),
+					awsv1.String(e.instanceIdentityDocument.InstanceID),
 				},
 			}, {
-				Name: aws.String(resourceKey),
+				Name: awsv1.String(resourceKey),
 				Values: []*string{
-					aws.String(tagKey),
+					awsv1.String(tagKey),
 				},
 			},
 		},
@@ -68,12 +68,12 @@ func (e *EC2Wrapper) GetClusterTag(tagKey string) (string, error) {
 	log.Infof("Calling DescribeTags with key %s", tagKey)
 	results, err := e.ec2ServiceClient.DescribeTags(&input)
 	if err != nil {
-		return "", errors.Wrap(err, "GetClusterTag: Unable to obtain EC2 instance tags")
+		return "", errors.Wrap(err, "GetClusterTagV1: Unable to obtain EC2 instance tags")
 	}
 
 	if len(results.Tags) < 1 {
-		return "", errors.Errorf("GetClusterTag: No tag matching key: %s", tagKey)
+		return "", errors.Errorf("GetClusterTagV1: No tag matching key: %s", tagKey)
 	}
 
-	return aws.StringValue(results.Tags[0].Value), nil
+	return awsv1.StringValue(results.Tags[0].Value), nil
 }

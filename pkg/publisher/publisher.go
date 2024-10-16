@@ -92,7 +92,7 @@ func New(ctx context.Context, region string, clusterID string, log logger.Logger
 
 	// If Customers have explicitly specified clusterID then skip generating it
 	if clusterID == "" {
-		ec2Client, err := ec2wrapper.NewMetricsClient()
+		ec2Client, err := ec2wrapper.NewMetricsClientV1()
 		if err != nil {
 			return nil, errors.Wrap(err, "publisher: unable to obtain EC2 service client")
 		}
@@ -230,7 +230,7 @@ func getClusterID(ec2Client *ec2wrapper.EC2Wrapper, log logger.Logger) string {
 	var clusterID string
 	var err error
 	for _, tag := range clusterIDTags {
-		clusterID, err = ec2Client.GetClusterTag(tag)
+		clusterID, err = ec2Client.GetClusterTagV1(tag)
 		if err == nil && clusterID != "" {
 			break
 		}

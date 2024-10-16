@@ -42,7 +42,7 @@ func TestGetClusterID(t *testing.T) {
 		instanceIdentityDocument: testInstanceIdentityDocument,
 	}
 
-	clusterID, err := ec2wrap.GetClusterTag(clusterIDTag)
+	clusterID, err := ec2wrap.GetClusterTagV1(clusterIDTag)
 	assert.NoError(t, err)
 	assert.NotNil(t, clusterID)
 }
@@ -57,7 +57,7 @@ func TestGetClusterIDWithError(t *testing.T) {
 		instanceIdentityDocument: testInstanceIdentityDocument,
 	}
 
-	clusterID, err := ec2wrap.GetClusterTag(clusterIDTag)
+	clusterID, err := ec2wrap.GetClusterTagV1(clusterIDTag)
 	assert.Error(t, err)
 	assert.Empty(t, clusterID)
 }
@@ -74,7 +74,7 @@ func TestGetClusterIDWithInsufficientTags(t *testing.T) {
 		instanceIdentityDocument: testInstanceIdentityDocument,
 	}
 
-	clusterID, err := ec2wrap.GetClusterTag(clusterIDTag)
+	clusterID, err := ec2wrap.GetClusterTagV1(clusterIDTag)
 	assert.Error(t, err)
 	assert.Empty(t, clusterID)
 }
