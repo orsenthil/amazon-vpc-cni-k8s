@@ -16,6 +16,9 @@ package publisher
 
 import (
 	"context"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
+	"github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"sync"
 	"time"
 
@@ -68,6 +71,12 @@ type PublisherV1 interface {
 	Stop()
 }
 
+type Publisher interface {
+	Publish(metricsDataPoints ...types.MetricDatum)
+	Start(publishInterval int)
+	Stop()
+}
+
 // cloudWatchPublisherV1 implements the `PublisherV1` interface for batching and publishing
 // metric data to the CloudWatch metrics backend
 type cloudWatchPublisherV1 struct {
@@ -77,6 +86,17 @@ type cloudWatchPublisherV1 struct {
 	clusterID            string
 	cloudwatchClient     cloudwatchifacev1.CloudWatchAPI
 	localMetricData      []*cloudwatchv1.MetricDatum
+	lock                 sync.RWMutex
+	log                  logger.Logger
+}
+
+type cloudWatchPublisher struct {
+	ctx                  context.Context
+	cancel               context.CancelFunc
+	updateIntervalTicker *time.Ticker
+	clusterID            string
+	cloudwatchClient     cloudwatch.Client
+	localMetricData      []types.MetricDatum
 	lock                 sync.RWMutex
 	log                  logger.Logger
 }
@@ -134,6 +154,50 @@ func NewV1(ctx context.Context, region string, clusterID string, log logger.Logg
 	}, nil
 }
 
+func New(ctx context.Context, region string, clusterID string, log logger.Logger) (Publisher, error) {
+	ctx = context.Background()
+	cfg, err := awssession.New(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if clusterID == "" {
+		ec2client, err := ec2wrapper.NewMetricsClient()
+		if err != nil {
+			return nil, err
+		}
+		clusterID = getClusterID(ec2client, log)
+	}
+	if region == "" {
+		ec2Metadataclient, err := ec2metadatawrapper.New(ctx)
+		if err != nil {
+			return nil, err
+		}
+		region, err = ec2Metadataclient.Region(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+	log.Infof("Using REGION=%s and CLUSTER_ID=%s", region, clusterID)
+
+	cfg.Region = region
+	cloudwatchClient := cloudwatch.NewFromConfig(cfg)
+
+	if err != nil {
+		return nil, err
+	}
+	derivedContext, cancel := context.WithCancel(ctx)
+
+	return &cloudWatchPublisher{
+		ctx:              derivedContext,
+		cancel:           cancel,
+		cloudwatchClient: *cloudwatchClient,
+		clusterID:        clusterID,
+		localMetricData:  make([]types.MetricDatum, 0, localMetricDataSize),
+		log:              log,
+	}, nil
+
+}
+
 // Start is used to set up the monitor loop
 func (p *cloudWatchPublisherV1) Start(publishInterval int) {
 	p.log.Infof("Starting monitor loop for CloudWatch publisher with push interval of %d seconds", publishInterval)
@@ -141,8 +205,19 @@ func (p *cloudWatchPublisherV1) Start(publishInterval int) {
 	p.monitor(publishIntervalDuration)
 }
 
+func (p *cloudWatchPublisher) Start(publishInterval int) {
+	p.log.Infof("Starting monitor loop for CloudWatch publisher with push interval of %d seconds", publishInterval)
+	publishIntervalDuration := time.Second * time.Duration(publishInterval)
+	p.monitor(publishIntervalDuration)
+}
+
 // Stop is used to cancel the monitor loop
 func (p *cloudWatchPublisherV1) Stop() {
+	p.log.Info("Stopping monitor loop for CloudWatch publisher")
+	p.cancel()
+}
+
+func (p *cloudWatchPublisher) Stop() {
 	p.log.Info("Stopping monitor loop for CloudWatch publisher")
 	p.cancel()
 }
@@ -164,10 +239,31 @@ func (p *cloudWatchPublisherV1) Publish(metricDataPoints ...*cloudwatchv1.Metric
 	}
 }
 
+func (p *cloudWatchPublisher) Publish(metricDataPoints ...types.MetricDatum) {
+	p.log.Info("Fetching CloudWatch dimensions")
+	dimensions := p.getCloudWatchMetricDatumDimensions()
+
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	for _, metricDatum := range metricDataPoints {
+		metricDatum.Dimensions = dimensions
+		p.localMetricData = append(p.localMetricData, metricDatum)
+	}
+}
+
 func (p *cloudWatchPublisherV1) pushLocal() {
 	p.lock.Lock()
 	data := p.localMetricData[:]
 	p.localMetricData = make([]*cloudwatchv1.MetricDatum, 0, localMetricDataSize)
+	p.lock.Unlock()
+	p.push(data)
+}
+
+func (p *cloudWatchPublisher) pushLocal() {
+	p.lock.Lock()
+	data := p.localMetricData[:]
+	p.localMetricData = make([]types.MetricDatum, 0, localMetricDataSize)
 	p.lock.Unlock()
 	p.push(data)
 }
@@ -202,9 +298,39 @@ func (p *cloudWatchPublisherV1) push(metricData []*cloudwatchv1.MetricDatum) {
 	}
 }
 
+func (p *cloudWatchPublisher) push(metricData []types.MetricDatum) {
+	if len(metricData) == 0 {
+		p.log.Info("Missing data for publishing CloudWatch metrics")
+		return
+	}
+
+	input := &cloudwatch.PutMetricDataInput{
+		Namespace: aws.String(cloudwatchMetricNamespace),
+	}
+
+	for len(metricData) > 0 {
+		input.MetricData = metricData[:min(maxDataPoints, len(metricData))]
+
+		err := p.send(input)
+		if err != nil {
+			p.log.Warnf("Unable to publish CloudWatch metrics: %v", err)
+		}
+
+		metricData = metricData[min(maxDataPoints, len(metricData)):]
+		input.MetricData = nil
+	}
+}
+
 func (p *cloudWatchPublisherV1) send(input cloudwatchv1.PutMetricDataInput) error {
 	p.log.Info("Sending data to CloudWatch metrics")
 	_, err := p.cloudwatchClient.PutMetricData(&input)
+	return err
+}
+
+// Why is there a *cloudwatch.PutMetricDataInput and cloudwatch.PutMetricDataInput?
+func (p *cloudWatchPublisher) send(input *cloudwatch.PutMetricDataInput) error {
+	p.log.Info("Sending data to CloudWatch metrics")
+	_, err := p.cloudwatchClient.PutMetricData(p.ctx, input)
 	return err
 }
 
@@ -215,6 +341,19 @@ func (p *cloudWatchPublisherV1) monitor(interval time.Duration) {
 		case <-p.updateIntervalTicker.C:
 			p.pushLocal()
 
+		case <-p.ctx.Done():
+			p.Stop()
+			return
+		}
+	}
+}
+
+func (p *cloudWatchPublisher) monitor(interval time.Duration) {
+	p.updateIntervalTicker = time.NewTicker(interval)
+	for {
+		select {
+		case <-p.updateIntervalTicker.C:
+			p.pushLocal()
 		case <-p.ctx.Done():
 			p.Stop()
 			return
@@ -235,11 +374,40 @@ func (p *cloudWatchPublisherV1) getCloudWatchMetricDatumDimensions() []*cloudwat
 	}
 }
 
+func (p *cloudWatchPublisher) getCloudWatchMetricNamespace() *string {
+	return aws.String(cloudwatchMetricNamespace)
+}
+
+func (p *cloudWatchPublisher) getCloudWatchMetricDatumDimensions() []types.Dimension {
+	return []types.Dimension{
+		{
+			Name:  aws.String(clusterIDDimension),
+			Value: aws.String(p.clusterID),
+		},
+	}
+}
+
 func getClusterIDV1(ec2Client *ec2wrapper.EC2WrapperV1, log logger.Logger) string {
 	var clusterID string
 	var err error
 	for _, tag := range clusterIDTags {
 		clusterID, err = ec2Client.GetClusterTagV1(tag)
+		if err == nil && clusterID != "" {
+			break
+		}
+	}
+	if clusterID == "" {
+		clusterID = defaultClusterID
+	}
+	log.Infof("Using cluster ID ", clusterID)
+	return clusterID
+}
+
+func getClusterID(ec2Client *ec2wrapper.EC2Wrapper, log logger.Logger) string {
+	var clusterID string
+	var err error
+	for _, tag := range clusterIDTags {
+		clusterID, err = ec2Client.GetClusterTag(tag)
 		if err == nil && clusterID != "" {
 			break
 		}

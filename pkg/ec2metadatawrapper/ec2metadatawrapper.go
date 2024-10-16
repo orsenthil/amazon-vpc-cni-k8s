@@ -53,13 +53,13 @@ func (c *ec2MetadataClientImplV1) Region() (string, error) {
 // HTTPClient is used to help with testing
 type HTTPClient interface {
 	GetInstanceIdentityDocument(ctx context.Context) (*v2ec2imds.GetInstanceIdentityDocumentOutput, error)
-	GetRegion(ctx context.Context) (string, error)
+	Region(ctx context.Context) (string, error)
 }
 
 // EC2MetadataClient is used to obtain a subset of information from EC2 IMDS
 type EC2MetadataClient interface {
 	GetInstanceIdentityDocument(ctx context.Context) (*v2ec2imds.GetInstanceIdentityDocumentOutput, error)
-	GetRegion(ctx context.Context) (string, error)
+	Region(ctx context.Context) (string, error)
 }
 
 type ec2MetadataClientImpl struct {
@@ -88,7 +88,7 @@ func (c *ec2MetadataClientImpl) GetInstanceIdentityDocument(ctx context.Context)
 	return c.client.GetInstanceIdentityDocument(ctx, &v2ec2imds.GetInstanceIdentityDocumentInput{})
 }
 
-func (c *ec2MetadataClientImpl) GetRegion(ctx context.Context) (string, error) {
+func (c *ec2MetadataClientImpl) Region(ctx context.Context) (string, error) {
 	output, err := c.client.GetRegion(ctx, &v2ec2imds.GetRegionInput{})
 	if err != nil {
 		return "", err
