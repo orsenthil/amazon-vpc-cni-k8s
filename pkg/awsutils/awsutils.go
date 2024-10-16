@@ -38,6 +38,9 @@ import (
 	"github.com/aws/amazon-vpc-cni-k8s/pkg/utils/retry"
 	"github.com/aws/amazon-vpc-cni-k8s/pkg/vpc"
 	"github.com/aws/amazon-vpc-cni-k8s/utils/prometheusmetrics"
+	v2config "github.com/aws/aws-sdk-go-v2/config"
+	v2imds "github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
+	v2ec2 "github.com/aws/aws-sdk-go-v2/service/ec2"
 	awsv1 "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -219,8 +222,11 @@ type EC2InstanceMetadataCache struct {
 	clusterName       string
 	additionalENITags map[string]string
 
-	imds   TypedIMDS
+	imdsv1 TypedIMDS
 	ec2SVC ec2wrapper.EC2
+
+	imds      *v2imds.Client
+	ec2Client *v2ec2.Client
 }
 
 // ENIMetadata contains information about an ENI
@@ -355,7 +361,46 @@ func (i instrumentedIMDS) GetMetadataWithContext(ctx context.Context, p string) 
 	return result, nil
 }
 
-// NewV1 creates an EC2InstanceMetadataCache
+func New(useSubnetDiscovery, useCustomNetworking, disableLeakedENICleanup, v4Enabled, v6Enabled bool) (*EC2InstanceMetadataCache, error) {
+	ctx := context.Background()
+
+	cfg, err := v2config.LoadDefaultConfig(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load AWS SDK config")
+	}
+
+	imdsClient := v2imds.NewFromConfig(cfg)
+	cache := &EC2InstanceMetadataCache{
+		imds:                imdsClient,
+		clusterName:         os.Getenv(clusterNameEnvVar),
+		additionalENITags:   loadAdditionalENITags(),
+		useCustomNetworking: useCustomNetworking,
+		useSubnetDiscovery:  useSubnetDiscovery,
+		v4Enabled:           v4Enabled,
+		v6Enabled:           v6Enabled,
+	}
+
+	region, err := imdsClient.GetRegion(ctx, &v2imds.GetRegionInput{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to retrieve region data from instance metadata")
+	}
+	cache.region = region.Region
+
+	cfg.Region = cache.region
+	cache.ec2Client = v2ec2.NewFromConfig(cfg)
+
+	err = cache.initWithEC2Metadata(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !disableLeakedENICleanup {
+		go wait.Forever(cache.cleanUpLeakedENIs, time.Hour)
+	}
+
+	return cache, nil
+}
+
 func NewV1(useSubnetDiscovery, useCustomNetworking, disableLeakedENICleanup, v4Enabled, v6Enabled bool) (*EC2InstanceMetadataCache, error) {
 	// ctx is passed to initWithEC2Metadata func to cancel spawned go-routines when tests are run
 	ctx := context.Background()
@@ -365,7 +410,7 @@ func NewV1(useSubnetDiscovery, useCustomNetworking, disableLeakedENICleanup, v4E
 	ec2Metadatav1 := ec2metadata.New(sess)
 
 	cache := &EC2InstanceMetadataCache{}
-	cache.imds = TypedIMDS{instrumentedIMDS{ec2Metadatav1}}
+	cache.imdsv1 = TypedIMDS{instrumentedIMDS{ec2Metadatav1}}
 	cache.clusterName = os.Getenv(clusterNameEnvVar)
 	cache.additionalENITags = loadAdditionalENITags()
 
@@ -408,7 +453,7 @@ func (cache *EC2InstanceMetadataCache) InitCachedPrefixDelegation(enablePrefixDe
 func (cache *EC2InstanceMetadataCache) initWithEC2Metadata(ctx context.Context) error {
 	var err error
 	// retrieve availability-zone
-	cache.availabilityZone, err = cache.imds.GetAZ(ctx)
+	cache.availabilityZone, err = cache.imdsv1.GetAZ(ctx)
 	if err != nil {
 		awsAPIErrInc("GetAZ", err)
 		return err
@@ -416,7 +461,7 @@ func (cache *EC2InstanceMetadataCache) initWithEC2Metadata(ctx context.Context) 
 	log.Debugf("Found availability zone: %s ", cache.availabilityZone)
 
 	// retrieve primary interface local-ipv4
-	cache.localIPv4, err = cache.imds.GetLocalIPv4(ctx)
+	cache.localIPv4, err = cache.imdsv1.GetLocalIPv4(ctx)
 	if err != nil {
 		awsAPIErrInc("GetLocalIPv4", err)
 		return err
@@ -424,7 +469,7 @@ func (cache *EC2InstanceMetadataCache) initWithEC2Metadata(ctx context.Context) 
 	log.Debugf("Discovered the instance primary IPv4 address: %s", cache.localIPv4)
 
 	// retrieve instance-id
-	cache.instanceID, err = cache.imds.GetInstanceID(ctx)
+	cache.instanceID, err = cache.imdsv1.GetInstanceID(ctx)
 	if err != nil {
 		awsAPIErrInc("GetInstanceID", err)
 		return err
@@ -432,7 +477,7 @@ func (cache *EC2InstanceMetadataCache) initWithEC2Metadata(ctx context.Context) 
 	log.Debugf("Found instance-id: %s ", cache.instanceID)
 
 	// retrieve instance-type
-	cache.instanceType, err = cache.imds.GetInstanceType(ctx)
+	cache.instanceType, err = cache.imdsv1.GetInstanceType(ctx)
 	if err != nil {
 		awsAPIErrInc("GetInstanceType", err)
 		return err
@@ -440,7 +485,7 @@ func (cache *EC2InstanceMetadataCache) initWithEC2Metadata(ctx context.Context) 
 	log.Debugf("Found instance-type: %s ", cache.instanceType)
 
 	// retrieve primary interface's mac
-	mac, err := cache.imds.GetMAC(ctx)
+	mac, err := cache.imdsv1.GetMAC(ctx)
 	if err != nil {
 		awsAPIErrInc("GetMAC", err)
 		return err
@@ -448,7 +493,7 @@ func (cache *EC2InstanceMetadataCache) initWithEC2Metadata(ctx context.Context) 
 	cache.primaryENImac = mac
 	log.Debugf("Found primary interface's MAC address: %s", mac)
 
-	cache.primaryENI, err = cache.imds.GetInterfaceID(ctx, mac)
+	cache.primaryENI, err = cache.imdsv1.GetInterfaceID(ctx, mac)
 	if err != nil {
 		awsAPIErrInc("GetInterfaceID", err)
 		return errors.Wrap(err, "get instance metadata: failed to find primary ENI")
@@ -456,7 +501,7 @@ func (cache *EC2InstanceMetadataCache) initWithEC2Metadata(ctx context.Context) 
 	log.Debugf("%s is the primary ENI of this instance", cache.primaryENI)
 
 	// retrieve subnet-id
-	cache.subnetID, err = cache.imds.GetSubnetID(ctx, mac)
+	cache.subnetID, err = cache.imdsv1.GetSubnetID(ctx, mac)
 	if err != nil {
 		awsAPIErrInc("GetSubnetID", err)
 		return err
@@ -464,7 +509,7 @@ func (cache *EC2InstanceMetadataCache) initWithEC2Metadata(ctx context.Context) 
 	log.Debugf("Found subnet-id: %s ", cache.subnetID)
 
 	// retrieve vpc-id
-	cache.vpcID, err = cache.imds.GetVpcID(ctx, mac)
+	cache.vpcID, err = cache.imdsv1.GetVpcID(ctx, mac)
 	if err != nil {
 		awsAPIErrInc("GetVpcID", err)
 		return err
@@ -484,7 +529,7 @@ func (cache *EC2InstanceMetadataCache) initWithEC2Metadata(ctx context.Context) 
 func (cache *EC2InstanceMetadataCache) RefreshSGIDs(mac string, store *datastore.DataStore) error {
 	ctx := context.TODO()
 
-	sgIDs, err := cache.imds.GetSecurityGroupIDs(ctx, mac)
+	sgIDs, err := cache.imdsv1.GetSecurityGroupIDs(ctx, mac)
 	if err != nil {
 		awsAPIErrInc("GetSecurityGroupIDs", err)
 		return err
@@ -560,7 +605,7 @@ func (cache *EC2InstanceMetadataCache) GetAttachedENIs() (eniList []ENIMetadata,
 	ctx := context.TODO()
 
 	// retrieve number of interfaces
-	macs, err := cache.imds.GetMACs(ctx)
+	macs, err := cache.imdsv1.GetMACs(ctx)
 	if err != nil {
 		awsAPIErrInc("GetMACs", err)
 		return nil, err
@@ -585,19 +630,19 @@ func (cache *EC2InstanceMetadataCache) getENIMetadata(eniMAC string) (ENIMetadat
 	var err error
 	var deviceNum int
 
-	eniID, err := cache.imds.GetInterfaceID(ctx, eniMAC)
+	eniID, err := cache.imdsv1.GetInterfaceID(ctx, eniMAC)
 	if err != nil {
 		awsAPIErrInc("GetInterfaceID", err)
 		return ENIMetadata{}, err
 	}
 
-	deviceNum, err = cache.imds.GetDeviceNumber(ctx, eniMAC)
+	deviceNum, err = cache.imdsv1.GetDeviceNumber(ctx, eniMAC)
 	if err != nil {
 		awsAPIErrInc("GetDeviceNumber", err)
 		return ENIMetadata{}, err
 	}
 
-	primaryMAC, err := cache.imds.GetMAC(ctx)
+	primaryMAC, err := cache.imdsv1.GetMAC(ctx)
 	if err != nil {
 		awsAPIErrInc("GetMAC", err)
 		return ENIMetadata{}, err
@@ -611,7 +656,7 @@ func (cache *EC2InstanceMetadataCache) getENIMetadata(eniMAC string) (ENIMetadat
 	log.Debugf("Found ENI: %s, MAC %s, device %d", eniID, eniMAC, deviceNum)
 
 	// Get IMDS fields for the interface
-	macImdsFields, err := cache.imds.GetMACImdsFields(ctx, eniMAC)
+	macImdsFields, err := cache.imdsv1.GetMACImdsFields(ctx, eniMAC)
 	if err != nil {
 		awsAPIErrInc("GetMACImdsFields", err)
 		return ENIMetadata{}, err
@@ -620,7 +665,7 @@ func (cache *EC2InstanceMetadataCache) getENIMetadata(eniMAC string) (ENIMetadat
 	// Efa-only interfaces do not have any ipv4s or ipv6s associated with it. If we don't find any local-ipv4 or ipv6 info in imds we assume it to be efa-only interface and validate this later via ec2 call
 	for _, field := range macImdsFields {
 		if field == "local-ipv4s" {
-			imdsIPv4s, err := cache.imds.GetLocalIPv4s(ctx, eniMAC)
+			imdsIPv4s, err := cache.imdsv1.GetLocalIPv4s(ctx, eniMAC)
 			if err != nil {
 				awsAPIErrInc("GetLocalIPv4s", err)
 				return ENIMetadata{}, err
@@ -632,7 +677,7 @@ func (cache *EC2InstanceMetadataCache) getENIMetadata(eniMAC string) (ENIMetadat
 			}
 		}
 		if field == "ipv6s" {
-			imdsIPv6s, err := cache.imds.GetIPv6s(ctx, eniMAC)
+			imdsIPv6s, err := cache.imdsv1.GetIPv6s(ctx, eniMAC)
 			if err != nil {
 				awsAPIErrInc("GetIPv6s", err)
 			} else if len(imdsIPv6s) > 0 {
@@ -658,13 +703,13 @@ func (cache *EC2InstanceMetadataCache) getENIMetadata(eniMAC string) (ENIMetadat
 	}
 
 	// Get IPv4 and IPv6 addresses assigned to interface
-	cidr, err := cache.imds.GetSubnetIPv4CIDRBlock(ctx, eniMAC)
+	cidr, err := cache.imdsv1.GetSubnetIPv4CIDRBlock(ctx, eniMAC)
 	if err != nil {
 		awsAPIErrInc("GetSubnetIPv4CIDRBlock", err)
 		return ENIMetadata{}, err
 	}
 
-	imdsIPv4s, err := cache.imds.GetLocalIPv4s(ctx, eniMAC)
+	imdsIPv4s, err := cache.imdsv1.GetLocalIPv4s(ctx, eniMAC)
 	if err != nil {
 		awsAPIErrInc("GetLocalIPv4s", err)
 		return ENIMetadata{}, err
@@ -682,14 +727,14 @@ func (cache *EC2InstanceMetadataCache) getENIMetadata(eniMAC string) (ENIMetadat
 	var subnetV6Cidr string
 	if cache.v6Enabled {
 		// For IPv6 ENIs, do not error on missing IPv6 information
-		v6cidr, err := cache.imds.GetSubnetIPv6CIDRBlocks(ctx, eniMAC)
+		v6cidr, err := cache.imdsv1.GetSubnetIPv6CIDRBlocks(ctx, eniMAC)
 		if err != nil {
 			awsAPIErrInc("GetSubnetIPv6CIDRBlocks", err)
 		} else {
 			subnetV6Cidr = v6cidr.String()
 		}
 
-		imdsIPv6s, err := cache.imds.GetIPv6s(ctx, eniMAC)
+		imdsIPv6s, err := cache.imdsv1.GetIPv6s(ctx, eniMAC)
 		if err != nil {
 			awsAPIErrInc("GetIPv6s", err)
 		} else {
@@ -707,7 +752,7 @@ func (cache *EC2InstanceMetadataCache) getENIMetadata(eniMAC string) (ENIMetadat
 
 	// If IPv6 is enabled, get attached v6 prefixes.
 	if cache.v6Enabled {
-		imdsIPv6Prefixes, err := cache.imds.GetIPv6Prefixes(ctx, eniMAC)
+		imdsIPv6Prefixes, err := cache.imdsv1.GetIPv6Prefixes(ctx, eniMAC)
 		if err != nil {
 			awsAPIErrInc("GetIPv6Prefixes", err)
 			return ENIMetadata{}, err
@@ -722,7 +767,7 @@ func (cache *EC2InstanceMetadataCache) getENIMetadata(eniMAC string) (ENIMetadat
 		// If primary ENI has prefixes attached and then we move to custom networking, we don't need to fetch
 		// the prefix since recommendation is to terminate the nodes and that would have deleted the prefix on the
 		// primary ENI.
-		imdsIPv4Prefixes, err := cache.imds.GetIPv4Prefixes(ctx, eniMAC)
+		imdsIPv4Prefixes, err := cache.imdsv1.GetIPv4Prefixes(ctx, eniMAC)
 		if err != nil {
 			awsAPIErrInc("GetIPv4Prefixes", err)
 			return ENIMetadata{}, err
@@ -2018,7 +2063,7 @@ func (cache *EC2InstanceMetadataCache) getLeakedENIs() ([]*ec2.NetworkInterface,
 func (cache *EC2InstanceMetadataCache) GetVPCIPv4CIDRs() ([]string, error) {
 	ctx := context.TODO()
 
-	ipnets, err := cache.imds.GetVPCIPv4CIDRBlocks(ctx, cache.primaryENImac)
+	ipnets, err := cache.imdsv1.GetVPCIPv4CIDRBlocks(ctx, cache.primaryENImac)
 	if err != nil {
 		awsAPIErrInc("GetVPCIPv4CIDRBlocks", err)
 		return nil, err
@@ -2042,7 +2087,7 @@ func (cache *EC2InstanceMetadataCache) GetLocalIPv4() net.IP {
 func (cache *EC2InstanceMetadataCache) GetVPCIPv6CIDRs() ([]string, error) {
 	ctx := context.TODO()
 
-	ipnets, err := cache.imds.GetVPCIPv6CIDRBlocks(ctx, cache.primaryENImac)
+	ipnets, err := cache.imdsv1.GetVPCIPv6CIDRBlocks(ctx, cache.primaryENImac)
 	if err != nil {
 		awsAPIErrInc("GetVPCIPv6CIDRBlocks", err)
 		return nil, err

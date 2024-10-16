@@ -167,7 +167,7 @@ func TestInitWithEC2metadata(t *testing.T) {
 	defer ctrl.Finish()
 	mockMetadata := testMetadata(nil)
 
-	cache := &EC2InstanceMetadataCache{imds: TypedIMDS{mockMetadata}, ec2SVC: mockEC2}
+	cache := &EC2InstanceMetadataCache{imdsv1: TypedIMDS{mockMetadata}, ec2SVC: mockEC2}
 	err := cache.initWithEC2Metadata(ctx)
 	if assert.NoError(t, err) {
 		assert.Equal(t, az, cache.availabilityZone)
@@ -196,7 +196,7 @@ func TestInitWithEC2metadataErr(t *testing.T) {
 			key: fmt.Errorf("An error with %s", key),
 		})
 
-		cache := &EC2InstanceMetadataCache{imds: TypedIMDS{mockMetadata}, ec2SVC: mockEC2}
+		cache := &EC2InstanceMetadataCache{imdsv1: TypedIMDS{mockMetadata}, ec2SVC: mockEC2}
 
 		// This test is a bit silly.  We expect broken metadata to result in an err return here.  But if the code is resilient and _succeeds_, then of course that's ok too.  Mostly we just want it not to panic.
 		assert.NotPanics(t, func() {
@@ -215,7 +215,7 @@ func TestGetAttachedENIs(t *testing.T) {
 		metadataMACPath + eni2MAC + metadataIPv4s:      eni2PrivateIP,
 	})
 
-	cache := &EC2InstanceMetadataCache{imds: TypedIMDS{mockMetadata}}
+	cache := &EC2InstanceMetadataCache{imdsv1: TypedIMDS{mockMetadata}}
 	ens, err := cache.GetAttachedENIs()
 	if assert.NoError(t, err) {
 		assert.Equal(t, len(ens), 2)
@@ -231,7 +231,7 @@ func TestGetAttachedENIsWithEfaOnly(t *testing.T) {
 		metadataMACPath + eni2MAC + metadataSubnetCIDR: subnetCIDR,
 	})
 
-	cache := &EC2InstanceMetadataCache{imds: TypedIMDS{mockMetadata}}
+	cache := &EC2InstanceMetadataCache{imdsv1: TypedIMDS{mockMetadata}}
 	ens, err := cache.GetAttachedENIs()
 	if assert.NoError(t, err) {
 		assert.Equal(t, len(ens), 2)
@@ -249,7 +249,7 @@ func TestGetAttachedENIsWithPrefixes(t *testing.T) {
 		metadataMACPath + eni2MAC + metadataIPv4Prefixes: eni2Prefix,
 	})
 
-	cache := &EC2InstanceMetadataCache{imds: TypedIMDS{mockMetadata}}
+	cache := &EC2InstanceMetadataCache{imdsv1: TypedIMDS{mockMetadata}}
 	ens, err := cache.GetAttachedENIs()
 	if assert.NoError(t, err) {
 		assert.Equal(t, len(ens), 2)
@@ -405,7 +405,7 @@ func TestDescribeAllENIs(t *testing.T) {
 
 	for _, tc := range testCases {
 		mockEC2.EXPECT().DescribeNetworkInterfacesWithContext(gomock.Any(), gomock.Any(), gomock.Any()).Times(tc.n).Return(result, tc.err)
-		cache := &EC2InstanceMetadataCache{imds: TypedIMDS{mockMetadata}, ec2SVC: mockEC2}
+		cache := &EC2InstanceMetadataCache{imdsv1: TypedIMDS{mockMetadata}, ec2SVC: mockEC2}
 		metaData, err := cache.DescribeAllENIs()
 		assert.Equal(t, tc.expErr, err, tc.name)
 		assert.Equal(t, tc.exptags, metaData.TagMap, tc.name)
@@ -459,7 +459,7 @@ func TestAllocENI(t *testing.T) {
 
 	cache := &EC2InstanceMetadataCache{
 		ec2SVC:             mockEC2,
-		imds:               TypedIMDS{mockMetadata},
+		imdsv1:             TypedIMDS{mockMetadata},
 		instanceType:       "c5n.18xlarge",
 		useSubnetDiscovery: true,
 	}
@@ -510,7 +510,7 @@ func TestAllocENINoFreeDevice(t *testing.T) {
 
 	cache := &EC2InstanceMetadataCache{
 		ec2SVC:             mockEC2,
-		imds:               TypedIMDS{mockMetadata},
+		imdsv1:             TypedIMDS{mockMetadata},
 		instanceType:       "c5n.18xlarge",
 		useSubnetDiscovery: true,
 	}
@@ -563,7 +563,7 @@ func TestAllocENIMaxReached(t *testing.T) {
 
 	cache := &EC2InstanceMetadataCache{
 		ec2SVC:             mockEC2,
-		imds:               TypedIMDS{mockMetadata},
+		imdsv1:             TypedIMDS{mockMetadata},
 		instanceType:       "c5n.18xlarge",
 		useSubnetDiscovery: true,
 	}
@@ -655,7 +655,7 @@ func TestAllocENIWithIPAddressesAlreadyFull(t *testing.T) {
 
 	cache := &EC2InstanceMetadataCache{
 		ec2SVC:             mockEC2,
-		imds:               TypedIMDS{mockMetadata},
+		imdsv1:             TypedIMDS{mockMetadata},
 		instanceType:       "t3.xlarge",
 		useSubnetDiscovery: true,
 	}
@@ -708,7 +708,7 @@ func TestAllocENIWithPrefixAddresses(t *testing.T) {
 
 	cache := &EC2InstanceMetadataCache{
 		ec2SVC:                 mockEC2,
-		imds:                   TypedIMDS{mockMetadata},
+		imdsv1:                 TypedIMDS{mockMetadata},
 		instanceType:           "c5n.18xlarge",
 		enablePrefixDelegation: true,
 		useSubnetDiscovery:     true,
@@ -743,7 +743,7 @@ func TestAllocENIWithPrefixesAlreadyFull(t *testing.T) {
 
 	cache := &EC2InstanceMetadataCache{
 		ec2SVC:                 mockEC2,
-		imds:                   TypedIMDS{mockMetadata},
+		imdsv1:                 TypedIMDS{mockMetadata},
 		instanceType:           "c5n.18xlarge",
 		enablePrefixDelegation: true,
 		useSubnetDiscovery:     true,
@@ -1051,7 +1051,7 @@ func TestEC2InstanceMetadataCache_waitForENIAndIPsAttached(t *testing.T) {
 				metadataMACPath + eni2MAC + metadataSubnetCIDR: subnetCIDR,
 				metadataMACPath + eni2MAC + metadataIPv4s:      eniIPs,
 			})
-			cache := &EC2InstanceMetadataCache{imds: TypedIMDS{mockMetadata}, ec2SVC: mockEC2}
+			cache := &EC2InstanceMetadataCache{imdsv1: TypedIMDS{mockMetadata}, ec2SVC: mockEC2}
 			gotEniMetadata, err := cache.waitForENIAndIPsAttached(tt.args.eni, tt.args.wantedSecondaryIPs, tt.args.maxBackoffDelay)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("waitForENIAndIPsAttached() error = %v, wantErr %v", err, tt.wantErr)
@@ -1148,7 +1148,7 @@ func TestEC2InstanceMetadataCache_waitForENIAndPrefixesAttached(t *testing.T) {
 				metadataMACPath + eni2MAC + metadataIPv4s:      eniIPs,
 				metadataMACPath + eni2MAC + metaDataPrefixPath: eniPrefixes,
 			})
-			cache := &EC2InstanceMetadataCache{imds: TypedIMDS{mockMetadata}, ec2SVC: mockEC2,
+			cache := &EC2InstanceMetadataCache{imdsv1: TypedIMDS{mockMetadata}, ec2SVC: mockEC2,
 				enablePrefixDelegation: true, v4Enabled: tt.args.v4Enabled, v6Enabled: tt.args.v6Enabled}
 			gotEniMetadata, err := cache.waitForENIAndIPsAttached(tt.args.eni, tt.args.wantedSecondaryIPs, tt.args.maxBackoffDelay)
 			if (err != nil) != tt.wantErr {
@@ -1164,7 +1164,7 @@ func TestEC2InstanceMetadataCache_waitForENIAndPrefixesAttached(t *testing.T) {
 
 func TestEC2InstanceMetadataCache_SetUnmanagedENIs(t *testing.T) {
 	mockMetadata := testMetadata(nil)
-	cache := &EC2InstanceMetadataCache{imds: TypedIMDS{mockMetadata}}
+	cache := &EC2InstanceMetadataCache{imdsv1: TypedIMDS{mockMetadata}}
 	cache.SetUnmanagedENIs(nil)
 	assert.False(t, cache.IsUnmanagedENI("eni-1"))
 	cache.SetUnmanagedENIs([]string{"eni-1", "eni-2"})
