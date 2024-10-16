@@ -16,11 +16,12 @@ package publisher
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
-	"sync"
-	"time"
 
 	awsv1 "github.com/aws/aws-sdk-go/aws"
 	cloudwatchv1 "github.com/aws/aws-sdk-go/service/cloudwatch"
