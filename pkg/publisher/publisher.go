@@ -86,8 +86,8 @@ type cloudWatchPublisher struct {
 // Case 2: Cx using IRSA but not specified clusterID, we can still get this info if IMDS is not blocked
 // Case 3: Cx blocked IMDS access and not using IRSA (which means region == "") AND
 // not specified clusterID then its a Cx error
-// New returns a new instance of `Publisher`
-func New(ctx context.Context, region string, clusterID string, log logger.Logger) (Publisher, error) {
+// NewV1 returns a new instance of `Publisher`
+func NewV1(ctx context.Context, region string, clusterID string, log logger.Logger) (Publisher, error) {
 	sess := awssession.NewV1()
 
 	// If Customers have explicitly specified clusterID then skip generating it

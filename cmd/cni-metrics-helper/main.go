@@ -153,7 +153,7 @@ func main() {
 	var cw publisher.Publisher
 
 	if options.submitCW {
-		cw, err = publisher.New(ctx, region, clusterID, log)
+		cw, err = publisher.NewV1(ctx, region, clusterID, log)
 		if err != nil {
 			log.Fatalf("Failed to create publisher: %v", err)
 		}

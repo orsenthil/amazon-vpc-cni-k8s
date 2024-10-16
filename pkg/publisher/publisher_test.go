@@ -42,7 +42,7 @@ func TestCloudWatchPublisherWithNoIMDS(t *testing.T) {
 	region := "us-west-2"
 	clusterID := testClusterID
 
-	cw, err := New(ctx, region, clusterID, log)
+	cw, err := NewV1(ctx, region, clusterID, log)
 	assert.NoError(t, err)
 	assert.NotNil(t, cw)
 }
