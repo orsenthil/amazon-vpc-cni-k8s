@@ -8,39 +8,39 @@ import (
 
 // TODO: Move away from using mock
 
-// HTTPClient is used to help with testing
-type HTTPClient interface {
+// HTTPClientV1 is used to help with testing
+type HTTPClientV1 interface {
 	GetInstanceIdentityDocument() (ec2metadata.EC2InstanceIdentityDocument, error)
 	Region() (string, error)
 }
 
-// EC2MetadataClient to used to obtain a subset of information from EC2 IMDS
-type EC2MetadataClient interface {
+// EC2MetadataClientV1 to used to obtain a subset of information from EC2 IMDS
+type EC2MetadataClientV1 interface {
 	GetInstanceIdentityDocument() (ec2metadata.EC2InstanceIdentityDocument, error)
 	Region() (string, error)
 }
 
-type ec2MetadataClientImpl struct {
-	client HTTPClient
+type ec2MetadataClientImplV1 struct {
+	client HTTPClientV1
 }
 
-// New creates an ec2metadata client to retrieve metadata
-func New(session *session.Session) EC2MetadataClient {
+// NewV1 creates an ec2metadata client to retrieve metadata
+func NewV1(session *session.Session) EC2MetadataClientV1 {
 	metadata := ec2metadata.New(session)
-	return NewMetadataService(metadata)
+	return NewMetadataServiceV1(metadata)
 }
 
-// NewMetadataService creates an ec2metadata client to retrieve metadata
-func NewMetadataService(metadata HTTPClient) EC2MetadataClient {
-	return &ec2MetadataClientImpl{client: metadata}
+// NewMetadataServiceV1 creates an ec2metadata client to retrieve metadata
+func NewMetadataServiceV1(metadata HTTPClientV1) EC2MetadataClientV1 {
+	return &ec2MetadataClientImplV1{client: metadata}
 }
 
 // InstanceIdentityDocument returns instance identity documents
 // http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-identity-documents.html
-func (c *ec2MetadataClientImpl) GetInstanceIdentityDocument() (ec2metadata.EC2InstanceIdentityDocument, error) {
+func (c *ec2MetadataClientImplV1) GetInstanceIdentityDocument() (ec2metadata.EC2InstanceIdentityDocument, error) {
 	return c.client.GetInstanceIdentityDocument()
 }
 
-func (c *ec2MetadataClientImpl) Region() (string, error) {
+func (c *ec2MetadataClientImplV1) Region() (string, error) {
 	return c.client.Region()
 }

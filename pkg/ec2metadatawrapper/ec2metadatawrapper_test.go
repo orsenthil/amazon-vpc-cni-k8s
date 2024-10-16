@@ -28,7 +28,7 @@ func TestGetInstanceIdentityDocHappyPath(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockGetter := mockec2metadatawrapper.NewMockHTTPClient(ctrl)
-	testClient := NewMetadataService(mockGetter)
+	testClient := NewMetadataServiceV1(mockGetter)
 
 	mockGetter.EXPECT().GetInstanceIdentityDocument().Return(testInstanceIdentityDoc, nil)
 
@@ -42,7 +42,7 @@ func TestGetInstanceIdentityDocError(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockGetter := mockec2metadatawrapper.NewMockHTTPClient(ctrl)
-	testClient := NewMetadataService(mockGetter)
+	testClient := NewMetadataServiceV1(mockGetter)
 
 	mockGetter.EXPECT().GetInstanceIdentityDocument().Return(ec2metadata.EC2InstanceIdentityDocument{}, errors.New("test error"))
 
@@ -56,7 +56,7 @@ func TestGetRegionHappyPath(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockGetter := mockec2metadatawrapper.NewMockHTTPClient(ctrl)
-	testClient := NewMetadataService(mockGetter)
+	testClient := NewMetadataServiceV1(mockGetter)
 
 	mockGetter.EXPECT().Region().Return(iidRegion, nil)
 
@@ -70,7 +70,7 @@ func TestGetRegionErr(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockGetter := mockec2metadatawrapper.NewMockHTTPClient(ctrl)
-	testClient := NewMetadataService(mockGetter)
+	testClient := NewMetadataServiceV1(mockGetter)
 
 	mockGetter.EXPECT().Region().Return("", errors.New("test error"))
 

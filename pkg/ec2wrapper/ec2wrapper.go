@@ -30,7 +30,7 @@ type EC2Wrapper struct {
 // NewMetricsClient returns an instance of the EC2 wrapper
 func NewMetricsClient() (*EC2Wrapper, error) {
 	sess := awssession.NewV1()
-	ec2MetadataClient := ec2metadatawrapper.New(sess)
+	ec2MetadataClient := ec2metadatawrapper.NewV1(sess)
 
 	instanceIdentityDocument, err := ec2MetadataClient.GetInstanceIdentityDocument()
 	if err != nil {

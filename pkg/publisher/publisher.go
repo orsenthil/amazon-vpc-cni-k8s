@@ -103,7 +103,7 @@ func New(ctx context.Context, region string, clusterID string, log logger.Logger
 	// Try to fetch region if not available
 	if region == "" {
 		// Get ec2metadata client
-		ec2MetadataClient := ec2metadatawrapper.New(sess)
+		ec2MetadataClient := ec2metadatawrapper.NewV1(sess)
 		val, err := ec2MetadataClient.Region()
 		if err != nil {
 			return nil, errors.Wrap(err, "publisher: Unable to obtain region")
