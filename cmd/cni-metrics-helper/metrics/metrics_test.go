@@ -49,7 +49,7 @@ func (target *testMetricsTarget) getInterestingMetrics() map[string]metricsConve
 	return target.interestingMetrics
 }
 
-func (target *testMetricsTarget) getCWMetricsPublisher() publisher.Publisher {
+func (target *testMetricsTarget) getCWMetricsPublisher() publisher.PublisherV1 {
 	return nil
 }
 

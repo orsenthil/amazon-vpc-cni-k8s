@@ -140,7 +140,7 @@ func TestCloudWatchPublisherWithSingleDatumWithError(t *testing.T) {
 
 	mockCloudWatch := mockCloudWatchClient{mockPutMetricDataError: errors.New("test error")}
 
-	cloudwatchPublisher := &cloudWatchPublisher{
+	cloudwatchPublisher := &cloudWatchPublisherV1{
 		ctx:              derivedContext,
 		cancel:           cancel,
 		cloudwatchClient: mockCloudWatch,
@@ -185,7 +185,7 @@ func TestGetCloudWatchMetricDatumDimensions(t *testing.T) {
 }
 
 func TestGetCloudWatchMetricDatumDimensionsWithMissingClusterID(t *testing.T) {
-	cloudwatchPublisher := &cloudWatchPublisher{log: getCloudWatchLog()}
+	cloudwatchPublisher := &cloudWatchPublisherV1{log: getCloudWatchLog()}
 
 	expectedCloudwatchDimensions := []*cloudwatch.Dimension{
 		{
@@ -199,7 +199,7 @@ func TestGetCloudWatchMetricDatumDimensionsWithMissingClusterID(t *testing.T) {
 }
 
 func TestPublishWithNoData(t *testing.T) {
-	cloudwatchPublisher := &cloudWatchPublisher{log: getCloudWatchLog()}
+	cloudwatchPublisher := &cloudWatchPublisherV1{log: getCloudWatchLog()}
 
 	testMetricDataPoints := []*cloudwatch.MetricDatum{}
 
@@ -208,7 +208,7 @@ func TestPublishWithNoData(t *testing.T) {
 }
 
 func TestPushWithMissingData(t *testing.T) {
-	cloudwatchPublisher := &cloudWatchPublisher{log: getCloudWatchLog()}
+	cloudwatchPublisher := &cloudWatchPublisherV1{log: getCloudWatchLog()}
 	testMetricDataPoints := []*cloudwatch.MetricDatum{}
 
 	cloudwatchPublisher.push(testMetricDataPoints)
@@ -243,11 +243,11 @@ func getCloudWatchLog() logger.Logger {
 	return logger.New(&logConfig)
 }
 
-func getCloudWatchPublisher(t *testing.T) *cloudWatchPublisher {
+func getCloudWatchPublisher(t *testing.T) *cloudWatchPublisherV1 {
 	// Setup context
 	derivedContext, cancel := context.WithCancel(context.TODO())
 
-	return &cloudWatchPublisher{
+	return &cloudWatchPublisherV1{
 		ctx:              derivedContext,
 		cancel:           cancel,
 		cloudwatchClient: mockCloudWatchClient{},

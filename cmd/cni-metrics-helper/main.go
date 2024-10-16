@@ -150,7 +150,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	var cw publisher.Publisher
+	var cw publisher.PublisherV1
 
 	if options.submitCW {
 		cw, err = publisher.NewV1(ctx, region, clusterID, log)

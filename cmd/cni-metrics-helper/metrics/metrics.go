@@ -37,7 +37,7 @@ type actionFuncType func(aggregatedValue *float64, sampleValue float64)
 type metricsTarget interface {
 	grabMetricsFromTarget(ctx context.Context, target string) ([]byte, error)
 	getInterestingMetrics() map[string]metricsConvert
-	getCWMetricsPublisher() publisher.Publisher
+	getCWMetricsPublisher() publisher.PublisherV1
 	getTargetList(ctx context.Context) ([]string, error)
 	submitCloudWatch() bool
 	submitPrometheus() bool
@@ -277,7 +277,7 @@ func processMetric(family *dto.MetricFamily, convert metricsConvert, log logger.
 	return resetDetected, nil
 }
 
-func produceHistogram(act metricsAction, cw publisher.Publisher) {
+func produceHistogram(act metricsAction, cw publisher.PublisherV1) {
 	prevUpperBound := float64(0)
 	for _, bucket := range act.bucket.curBucket {
 		mid := (*bucket.UpperBound-float64(prevUpperBound))/2 + prevUpperBound
@@ -315,7 +315,7 @@ func filterMetrics(originalMetrics map[string]*dto.MetricFamily,
 	return result, nil
 }
 
-func produceCloudWatchMetrics(t metricsTarget, families map[string]*dto.MetricFamily, convertDef map[string]metricsConvert, cw publisher.Publisher) {
+func produceCloudWatchMetrics(t metricsTarget, families map[string]*dto.MetricFamily, convertDef map[string]metricsConvert, cw publisher.PublisherV1) {
 	for key, family := range families {
 		convertMetrics := convertDef[key]
 		metricType := family.GetType()
