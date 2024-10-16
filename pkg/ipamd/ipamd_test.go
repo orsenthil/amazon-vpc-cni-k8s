@@ -991,7 +991,7 @@ func TestNodeIPPoolReconcile(t *testing.T) {
 	assert.Equal(t, 1, len(curENIs.ENIs))
 	assert.Equal(t, 0, curENIs.TotalIPs)
 
-	// New ENI attached
+	// NewV1 ENI attached
 	newENIMetadata := getSecondaryENIMetadata()
 
 	twoENIs := append(oneIPUnassigned, newENIMetadata)
@@ -1093,7 +1093,7 @@ func TestNodePrefixPoolReconcile(t *testing.T) {
 	assert.Equal(t, 1, len(curENIs.ENIs))
 	assert.Equal(t, 0, curENIs.TotalIPs)
 
-	// New ENI attached
+	// NewV1 ENI attached
 	newENIMetadata := getSecondaryENIMetadataPDenabled()
 
 	twoENIs := append(oneIPUnassigned, newENIMetadata)

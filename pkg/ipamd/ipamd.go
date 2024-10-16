@@ -344,7 +344,7 @@ func New(k8sClient client.Client) (*IPAMContext, error) {
 	c.enableIPv4 = isIPv4Enabled()
 	c.enableIPv6 = isIPv6Enabled()
 	c.disableENIProvisioning = disableENIProvisioning()
-	client, err := awsutils.New(c.useSubnetDiscovery, c.useCustomNetworking, disableLeakedENICleanup(), c.enableIPv4, c.enableIPv6)
+	client, err := awsutils.NewV1(c.useSubnetDiscovery, c.useCustomNetworking, disableLeakedENICleanup(), c.enableIPv4, c.enableIPv6)
 	if err != nil {
 		return nil, errors.Wrap(err, "ipamd: can not initialize with AWS SDK interface")
 	}
