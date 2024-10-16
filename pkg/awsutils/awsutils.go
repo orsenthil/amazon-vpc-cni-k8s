@@ -57,11 +57,11 @@ const (
 	// 100 is a hard limit because we use vlanID + 100 for pod networking table names
 	maxENIs                 = 100
 	clusterNameEnvVar       = "CLUSTER_NAME"
-	eniNodeTagKey           = "node.k8s.amazonawsv1.com/instance_id"
-	eniCreatedAtTagKey      = "node.k8s.amazonawsv1.com/createdAt"
-	eniClusterTagKey        = "cluster.k8s.amazonawsv1.com/name"
+	eniNodeTagKey           = "node.k8s.amazonaws.com/instance_id"
+	eniCreatedAtTagKey      = "node.k8s.amazonaws.com/createdAt"
+	eniClusterTagKey        = "cluster.k8s.amazonaws.com/name"
 	additionalEniTagsEnvVar = "ADDITIONAL_ENI_TAGS"
-	reservedTagKeyPrefix    = "k8s.amazonawsv1.com"
+	reservedTagKeyPrefix    = "k8s.amazonaws.com"
 	subnetDiscoveryTagKey   = "kubernetes.io/role/cni"
 	// UnknownInstanceType indicates that the instance type is not yet supported
 	UnknownInstanceType = "vpc ip resource(eni ip limit): unknown instance type"
