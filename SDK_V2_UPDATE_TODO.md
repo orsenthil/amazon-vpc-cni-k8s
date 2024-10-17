@@ -3,6 +3,10 @@
 - [x] Replace all the usages of awserr
 - [x] Replace all the usages of session.Session
 - [ ] Fix the Integration Tests
+- [ ] Migrate all the commands to V2.
+- [ ] Migrate main ipamd and cni to V2.
+- [ ] Use Understanding over the syntax.
+- [ ] Regenerate Mocks
 
 # References
 
