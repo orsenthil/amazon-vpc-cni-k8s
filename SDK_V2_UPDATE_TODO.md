@@ -1,7 +1,8 @@
 # Tasks
 
 - [x] Replace all the usages of awserr
-- [ ] Replace all the usages of session.Session
+- [x] Replace all the usages of session.Session
+- [ ] Fix the Integration Tests
 
 # References
 
