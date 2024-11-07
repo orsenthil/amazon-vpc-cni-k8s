@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"math/rand"
 	"net"
 	"os"
@@ -36,9 +37,9 @@ import (
 	"github.com/aws/amazon-vpc-cni-k8s/pkg/utils/retry"
 	"github.com/aws/amazon-vpc-cni-k8s/pkg/vpc"
 	"github.com/aws/amazon-vpc-cni-k8s/utils/prometheusmetrics"
+	ec2metadata "github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -357,19 +358,22 @@ func New(useSubnetDiscovery, useCustomNetworking, disableLeakedENICleanup, v4Ena
 	// ctx is passed to initWithEC2Metadata func to cancel spawned go-routines when tests are run
 	ctx := context.Background()
 
-	sess := awssession.New()
-	ec2Metadata := ec2metadata.New(sess)
+	awsconfig, err := awssession.New(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create aws session")
+	}
+	ec2Metadata := ec2metadata.NewFromConfig(awsconfig)
 	cache := &EC2InstanceMetadataCache{}
 	cache.imds = TypedIMDS{instrumentedIMDS{ec2Metadata}}
 	cache.clusterName = os.Getenv(clusterNameEnvVar)
 	cache.additionalENITags = loadAdditionalENITags()
 
-	region, err := ec2Metadata.Region()
+	region, err := ec2Metadata.GetRegion(ctx, nil)
 	if err != nil {
 		log.Errorf("Failed to retrieve region data from instance metadata %v", err)
 		return nil, errors.Wrap(err, "instance metadata: failed to retrieve region data")
 	}
-	cache.region = region
+	cache.region = region.Region
 	log.Debugf("Discovered region: %s", cache.region)
 	cache.useCustomNetworking = useCustomNetworking
 	log.Infof("Custom networking enabled %v", cache.useCustomNetworking)
@@ -378,9 +382,13 @@ func New(useSubnetDiscovery, useCustomNetworking, disableLeakedENICleanup, v4Ena
 	cache.v4Enabled = v4Enabled
 	cache.v6Enabled = v6Enabled
 
-	awsCfg := aws.NewConfig().WithRegion(region)
-	sess = sess.Copy(awsCfg)
-	ec2SVC := ec2wrapper.New(sess)
+	awsCfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region.Region))
+	if err != nil {
+		return nil, fmt.Errorf("unable to load SDK config, %v", err)
+	}
+
+	// TODO (senthilx) - Do we need this ec2wrapper at all ?
+	ec2SVC := ec2wrapper.New(awsCfg)
 	cache.ec2SVC = ec2SVC
 	err = cache.initWithEC2Metadata(ctx)
 	if err != nil {
