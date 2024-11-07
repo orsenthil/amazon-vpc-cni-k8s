@@ -7,6 +7,10 @@ require (
 	github.com/aws/amazon-vpc-cni-k8s/test/agent v0.0.0-20231212223725-21c4bd73015b
 	github.com/aws/amazon-vpc-resource-controller-k8s v1.5.0
 	github.com/aws/aws-sdk-go v1.55.5
+	github.com/aws/aws-sdk-go-v2 v1.32.4
+	github.com/aws/aws-sdk-go-v2/config v1.28.3
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.187.1
+	github.com/aws/smithy-go v1.22.0
 	github.com/containernetworking/cni v1.2.3
 	github.com/containernetworking/plugins v1.5.1
 	github.com/coreos/go-iptables v0.8.0
@@ -50,8 +54,6 @@ require (
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Microsoft/hcsshim v0.12.3 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535 // indirect
-	github.com/aws/aws-sdk-go-v2 v1.32.4 // indirect
-	github.com/aws/aws-sdk-go-v2/config v1.28.3 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.44 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.19 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.23 // indirect
@@ -62,7 +64,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.24.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.32.4 // indirect
-	github.com/aws/smithy-go v1.22.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
