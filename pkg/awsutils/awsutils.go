@@ -38,9 +38,9 @@ import (
 	"github.com/aws/amazon-vpc-cni-k8s/pkg/vpc"
 	"github.com/aws/amazon-vpc-cni-k8s/utils/prometheusmetrics"
 	ec2metadata "github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	v1 "k8s.io/api/core/v1"
@@ -217,7 +217,7 @@ type EC2InstanceMetadataCache struct {
 	additionalENITags map[string]string
 
 	imds   TypedIMDS
-	ec2SVC ec2wrapper.EC2
+	ec2SVC *ec2.Client
 }
 
 // ENIMetadata contains information about an ENI
