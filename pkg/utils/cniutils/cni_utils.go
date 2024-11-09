@@ -159,7 +159,7 @@ func PrefixSimilar(prefixPool []string, eniPrefixes []ec2types.Ipv4PrefixSpecifi
 	}
 
 	for _, prefix := range eniPrefixes {
-		if prefix == nil || prefix.Ipv4Prefix == nil {
+		if prefix.Ipv4Prefix == nil {
 			return false
 		}
 		if _, exists := prefixPoolSet[*prefix.Ipv4Prefix]; !exists {
@@ -182,7 +182,7 @@ func IPsSimilar(ipPool []string, eniIPs []ec2types.NetworkInterfacePrivateIpAddr
 	}
 
 	for _, ip := range eniIPs {
-		if ip == nil || ip.PrivateIpAddress == nil || ip.Primary == nil {
+		if ip.PrivateIpAddress == nil || ip.Primary == nil {
 			return false
 		}
 		if *ip.Primary {
