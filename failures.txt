@@ -1,0 +1,25 @@
+# github.com/aws/amazon-vpc-cni-k8s/pkg/ec2metadatawrapper [github.com/aws/amazon-vpc-cni-k8s/pkg/ec2metadatawrapper.test]
+pkg/ec2metadatawrapper/ec2metadatawrapper_test.go:32:35: cannot use mockGetter (variable of type *mock_ec2metadatawrapper.MockHTTPClient) as *imds.Client value in argument to NewMetadataService
+pkg/ec2metadatawrapper/ec2metadatawrapper_test.go:48:35: cannot use mockGetter (variable of type *mock_ec2metadatawrapper.MockHTTPClient) as *imds.Client value in argument to NewMetadataService
+pkg/ec2metadatawrapper/ec2metadatawrapper_test.go:61:35: cannot use mockGetter (variable of type *mock_ec2metadatawrapper.MockEC2MetadataClient) as *imds.Client value in argument to NewMetadataService
+pkg/ec2metadatawrapper/ec2metadatawrapper_test.go:75:35: cannot use mockGetter (variable of type *mock_ec2metadatawrapper.MockEC2MetadataClient) as *imds.Client value in argument to NewMetadataService
+# github.com/aws/amazon-vpc-cni-k8s/pkg/awsutils [github.com/aws/amazon-vpc-cni-k8s/pkg/awsutils.test]
+pkg/awsutils/awsutils_test.go:174:53: cannot use mockMetadata (variable of type FakeIMDS) as EC2MetadataIface value in struct literal: FakeIMDS does not implement EC2MetadataIface (missing method GetMetadata)
+pkg/awsutils/awsutils_test.go:174:76: cannot use mockEC2 (variable of type *mock_ec2wrapper.MockEC2) as *ec2.Client value in struct literal
+pkg/awsutils/awsutils_test.go:203:54: cannot use mockMetadata (variable of type FakeIMDS) as EC2MetadataIface value in struct literal: FakeIMDS does not implement EC2MetadataIface (missing method GetMetadata)
+pkg/awsutils/awsutils_test.go:203:77: cannot use mockEC2 (variable of type *mock_ec2wrapper.MockEC2) as *ec2.Client value in struct literal
+pkg/awsutils/awsutils_test.go:222:53: cannot use mockMetadata (variable of type FakeIMDS) as EC2MetadataIface value in struct literal: FakeIMDS does not implement EC2MetadataIface (missing method GetMetadata)
+pkg/awsutils/awsutils_test.go:238:53: cannot use mockMetadata (variable of type FakeIMDS) as EC2MetadataIface value in struct literal: FakeIMDS does not implement EC2MetadataIface (missing method GetMetadata)
+pkg/awsutils/awsutils_test.go:256:53: cannot use mockMetadata (variable of type FakeIMDS) as EC2MetadataIface value in struct literal: FakeIMDS does not implement EC2MetadataIface (missing method GetMetadata)
+pkg/awsutils/awsutils_test.go:270:45: cannot use mockEC2 (variable of type *mock_ec2wrapper.MockEC2) as *ec2.Client value in struct literal
+pkg/awsutils/awsutils_test.go:295:45: cannot use mockEC2 (variable of type *mock_ec2wrapper.MockEC2) as *ec2.Client value in struct literal
+pkg/awsutils/awsutils_test.go:362:46: cannot use mockEC2 (variable of type *mock_ec2wrapper.MockEC2) as *ec2.Client value in struct literal
+pkg/awsutils/awsutils_test.go:362:46: too many errors
+# github.com/aws/amazon-vpc-cni-k8s/pkg/ec2wrapper [github.com/aws/amazon-vpc-cni-k8s/pkg/ec2wrapper.test]
+pkg/ec2wrapper/ec2wrapper_test.go:41:29: cannot use mockEC2ServiceClient (variable of type mockEC2ServiceClient) as *ec2.Client value in struct literal
+pkg/ec2wrapper/ec2wrapper_test.go:56:29: cannot use mockEC2ServiceClient (variable of type mockEC2ServiceClient) as *ec2.Client value in struct literal
+pkg/ec2wrapper/ec2wrapper_test.go:73:29: cannot use mockEC2ServiceClient (variable of type mockEC2ServiceClient) as *ec2.Client value in struct literal
+# github.com/aws/amazon-vpc-cni-k8s/pkg/publisher [github.com/aws/amazon-vpc-cni-k8s/pkg/publisher.test]
+pkg/publisher/publisher_test.go:145:21: cannot use mockCloudWatch (variable of type mockCloudWatchClient) as cloudwatch.Client value in struct literal
+pkg/publisher/publisher_test.go:252:21: cannot use mockCloudWatchClient{} (value of type mockCloudWatchClient) as cloudwatch.Client value in struct literal
+make: *** [Makefile:220: unit-test] Error 1
