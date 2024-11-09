@@ -16,7 +16,6 @@ package awssession
 import (
 	"context"
 	"fmt"
-
 	"net/http"
 	"os"
 
