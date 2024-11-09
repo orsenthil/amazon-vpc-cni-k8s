@@ -261,7 +261,7 @@ type ENIMetadata struct {
 func (eni ENIMetadata) PrimaryIPv4Address() string {
 	for _, addr := range eni.IPv4Addresses {
 		if addr.Primary != nil && *addr.Primary {
-			return aws.ToString(addr.PrivateIpAddress)
+			return *addr.PrivateIpAddress
 		}
 	}
 	return ""
