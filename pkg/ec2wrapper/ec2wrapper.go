@@ -44,7 +44,7 @@ func NewMetricsClient() (*EC2Wrapper, error) {
 		return &EC2Wrapper{}, err
 	}
 
-	instanceIdentityDocumentOutput, err := ec2MetadataClient.GetInstanceIdentityDocument(ctx)
+	instanceIdentityDocumentOutput, err := ec2MetadataClient.GetInstanceIdentityDocument(ctx, &ec2metadata.GetInstanceIdentityDocumentInput{})
 	if err != nil {
 		return &EC2Wrapper{}, err
 	}
