@@ -16,6 +16,7 @@ package publisher
 
 import (
 	"context"
+	ec2metadata "github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 	"sync"
 	"time"
 
@@ -110,7 +111,8 @@ func New(ctx context.Context, region string, clusterID string, log logger.Logger
 		if err != nil {
 			return nil, err
 		}
-		region, err = ec2Metadataclient.GetRegion(ctx)
+		output, err := ec2Metadataclient.GetRegion(ctx, &ec2metadata.GetRegionInput{})
+		region = output.Region
 		if err != nil {
 			return nil, err
 		}
