@@ -23,7 +23,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	types "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -137,12 +136,15 @@ func TestCloudWatchPublisherWithGreaterThanMaxDatapointsAndStop(t *testing.T) {
 func TestCloudWatchPublisherWithSingleDatumWithError(t *testing.T) {
 	derivedContext, cancel := context.WithCancel(context.TODO())
 
-	mockCloudWatch := mockCloudWatchClient{mockPutMetricDataError: errors.New("test error")}
+	// Create a mock cloudwatch client that will return an error when PutMetricData is called
+	// mockCloudWatch := mockCloudWatchClient{
+	//	mockPutMetricDataError: errors.New("error"),
+	// }
 
 	cloudwatchPublisher := &cloudWatchPublisher{
 		ctx:              derivedContext,
 		cancel:           cancel,
-		cloudwatchClient: mockCloudWatch,
+		cloudwatchClient: cloudwatch.Client{},
 		clusterID:        testClusterID,
 		localMetricData:  make([]types.MetricDatum, 0, localMetricDataSize),
 		log:              getCloudWatchLog(),
@@ -226,13 +228,14 @@ func TestMin(t *testing.T) {
 
 // mockCloudWatchClient is used to facilitate testing
 type mockCloudWatchClient struct {
-	cloudwatch.Client
 	mockPutMetricDataError error
 }
 
-func (m mockCloudWatchClient) PutMetricData(input *cloudwatch.PutMetricDataInput) (*cloudwatch.PutMetricDataOutput, error) {
+func (m mockCloudWatchClient) PutMetricData(ctx context.Context, params *cloudwatch.PutMetricDataInput, optFns ...func(*cloudwatch.Options)) (*cloudwatch.PutMetricDataOutput, error) {
 	return &cloudwatch.PutMetricDataOutput{}, m.mockPutMetricDataError
 }
+
+// Implement other methods of the cloudwatch.Client interface as needed for testing.
 
 func getCloudWatchLog() logger.Logger {
 	logConfig := logger.Configuration{
@@ -249,7 +252,7 @@ func getCloudWatchPublisher(t *testing.T) *cloudWatchPublisher {
 	return &cloudWatchPublisher{
 		ctx:              derivedContext,
 		cancel:           cancel,
-		cloudwatchClient: mockCloudWatchClient{},
+		cloudwatchClient: cloudwatch.Client{},
 		clusterID:        testClusterID,
 		localMetricData:  make([]types.MetricDatum, 0, localMetricDataSize),
 		log:              getCloudWatchLog(),
