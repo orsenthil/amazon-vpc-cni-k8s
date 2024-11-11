@@ -10,18 +10,18 @@ import (
 
 // HTTPClient is used to help with testing
 type HTTPClient interface {
-	GetInstanceIdentityDocument(ctx context.Context, params *imds.GetInstanceIdentityDocumentInput) (*imds.GetInstanceIdentityDocumentOutput, error)
-	GetRegion(ctx context.Context, params *imds.GetRegionInput) (*imds.GetRegionOutput, error)
+	GetInstanceIdentityDocument(ctx context.Context, params *imds.GetInstanceIdentityDocumentInput, optFns ...func(*imds.Options)) (*imds.GetInstanceIdentityDocumentOutput, error)
+	GetRegion(ctx context.Context, params *imds.GetRegionInput, optFns ...func(*imds.Options)) (*imds.GetRegionOutput, error)
 }
 
 // EC2MetadataClient to used to obtain a subset of information from EC2 IMDS
 type EC2MetadataClient interface {
-	GetInstanceIdentityDocument(ctx context.Context) (*imds.GetInstanceIdentityDocumentOutput, error)
-	GetRegion(ctx context.Context) (string, error)
+	GetInstanceIdentityDocument(ctx context.Context, params *imds.GetInstanceIdentityDocumentInput, optFns ...func(*imds.Options)) (*imds.GetInstanceIdentityDocumentOutput, error)
+	GetRegion(ctx context.Context, params *imds.GetRegionInput, optFns ...func(*imds.Options)) (*imds.GetRegionOutput, error)
 }
 
 type ec2MetadataClientImpl struct {
-	client *imds.Client
+	client HTTPClient
 }
 
 // New creates an ec2metadata client to retrieve metadata
@@ -36,23 +36,16 @@ func New(ctx context.Context) (EC2MetadataClient, error) {
 }
 
 // NewMetadataService creates an ec2metadata client to retrieve metadata
-func NewMetadataService(client *imds.Client) EC2MetadataClient {
+func NewMetadataService(client HTTPClient) EC2MetadataClient {
 	return &ec2MetadataClientImpl{client: client}
 }
 
-// InstanceIdentityDocument returns instance identity documents
-// http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-identity-documents.html
-func (c *ec2MetadataClientImpl) GetInstanceIdentityDocument(ctx context.Context) (*imds.GetInstanceIdentityDocumentOutput, error) {
-	input := &imds.GetInstanceIdentityDocumentInput{}
-	return c.client.GetInstanceIdentityDocument(ctx, input)
+// GetInstanceIdentityDocument returns instance identity documents
+func (c *ec2MetadataClientImpl) GetInstanceIdentityDocument(ctx context.Context, params *imds.GetInstanceIdentityDocumentInput, optFns ...func(*imds.Options)) (*imds.GetInstanceIdentityDocumentOutput, error) {
+	return c.client.GetInstanceIdentityDocument(ctx, params, optFns...)
 }
 
 // GetRegion returns the AWS Region the instance is running in
-func (c *ec2MetadataClientImpl) GetRegion(ctx context.Context) (string, error) {
-	input := &imds.GetRegionInput{}
-	output, err := c.client.GetRegion(ctx, input)
-	if err != nil {
-		return "", err
-	}
-	return output.Region, nil
+func (c *ec2MetadataClientImpl) GetRegion(ctx context.Context, params *imds.GetRegionInput, optFns ...func(*imds.Options)) (*imds.GetRegionOutput, error) {
+	return c.client.GetRegion(ctx, params, optFns...)
 }

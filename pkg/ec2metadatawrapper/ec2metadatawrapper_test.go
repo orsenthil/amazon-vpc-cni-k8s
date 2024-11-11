@@ -35,7 +35,9 @@ func TestGetInstanceIdentityDocHappyPath(t *testing.T) {
 		InstanceIdentityDocument: testInstanceIdentityDoc,
 	}, nil)
 
-	doc, err := testClient.GetInstanceIdentityDocument(context.Background())
+	ctx := context.Background()
+
+	doc, err := testClient.GetInstanceIdentityDocument(ctx, &ec2metadata.GetInstanceIdentityDocumentInput{})
 	assert.NoError(t, err)
 	assert.Equal(t, iidRegion, doc.Region)
 }
@@ -48,7 +50,8 @@ func TestGetInstanceIdentityDocError(t *testing.T) {
 	testClient := NewMetadataService(mockGetter)
 
 	mockGetter.EXPECT().GetInstanceIdentityDocument(gomock.Any(), gomock.Any()).Return(&ec2metadata.GetInstanceIdentityDocumentOutput{}, errors.New("test error"))
-	doc, err := testClient.GetInstanceIdentityDocument(context.Background())
+	ctx := context.Background()
+	doc, err := testClient.GetInstanceIdentityDocument(ctx, &ec2metadata.GetInstanceIdentityDocumentInput{})
 	assert.Error(t, err)
 	assert.Empty(t, doc.Region)
 }
@@ -60,9 +63,9 @@ func TestGetRegionHappyPath(t *testing.T) {
 	mockGetter := mockec2metadatawrapper.NewMockEC2MetadataClient(ctrl)
 	testClient := NewMetadataService(mockGetter)
 
-	mockGetter.EXPECT().GetRegion(gomock.Any()).Return(iidRegion, nil)
+	mockGetter.EXPECT().GetRegion(gomock.Any(), gomock.Any()).Return(iidRegion, nil)
 
-	region, err := testClient.GetRegion(context.Background())
+	region, err := testClient.GetRegion(context.Background(), &ec2metadata.GetRegionInput{})
 	assert.NoError(t, err)
 	assert.Equal(t, iidRegion, region)
 }
@@ -74,9 +77,9 @@ func TestGetRegionErr(t *testing.T) {
 	mockGetter := mockec2metadatawrapper.NewMockEC2MetadataClient(ctrl)
 	testClient := NewMetadataService(mockGetter)
 
-	mockGetter.EXPECT().GetRegion(gomock.Any()).Return("", errors.New("test error"))
+	mockGetter.EXPECT().GetRegion(gomock.Any(), gomock.Any()).Return("", errors.New("test error"))
 
-	region, err := testClient.GetRegion(context.Background())
+	region, err := testClient.GetRegion(context.Background(), &ec2metadata.GetRegionInput{})
 	assert.Error(t, err)
 	assert.Empty(t, region)
 }
