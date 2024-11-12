@@ -26,7 +26,7 @@ var log = logger.Get()
 // EC2Wrapper is used to wrap around EC2 service APIs to obtain ClusterID from
 // the ec2 instance tags
 type EC2Wrapper struct {
-	ec2ServiceClient         *ec2.Client
+	ec2ServiceClient         ec2.DescribeTagsAPIClient
 	instanceIdentityDocument ec2metadata.InstanceIdentityDocument
 }
 

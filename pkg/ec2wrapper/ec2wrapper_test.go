@@ -1,6 +1,7 @@
 package ec2wrapper
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -80,12 +81,12 @@ func TestGetClusterIDWithInsufficientTags(t *testing.T) {
 }
 
 type mockEC2ServiceClient struct {
-	*ec2.Client
+	ec2.DescribeInstancesAPIClient
 	tags    *ec2.DescribeTagsOutput
 	tagsErr error
 }
 
-func (f mockEC2ServiceClient) DescribeTags(input *ec2.DescribeTagsInput) (*ec2.DescribeTagsOutput, error) {
-	return f.tags, f.tagsErr
-
+func (m mockEC2ServiceClient) DescribeTags(ctx context.Context, input *ec2.DescribeTagsInput, f ...func(*ec2.Options)) (*ec2.DescribeTagsOutput, error) {
+	//TODO implement me
+	panic("implement me")
 }
