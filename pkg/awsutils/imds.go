@@ -538,6 +538,11 @@ func IsNotFound(err error) bool {
 // FakeIMDS is a trivial implementation of EC2MetadataIface using an in-memory map - for testing.
 type FakeIMDS map[string]interface{}
 
+func (f FakeIMDS) GetMetadata(ctx context.Context, params *imds.GetMetadataInput, optFns ...func(*imds.Options)) (*imds.GetMetadataOutput, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 // Custom error type
 type CustomRequestFailure struct {
 	code       string

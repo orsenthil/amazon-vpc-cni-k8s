@@ -141,8 +141,7 @@ func testMetadataWithPrefixes(overrides map[string]interface{}) FakeIMDS {
 	return FakeIMDS(data)
 }
 
-func setup(t *testing.T) (*gomock.Controller,
-	*mock_ec2wrapper.MockEC2) {
+func setup(t *testing.T) (*gomock.Controller, *mock_ec2wrapper.MockEC2) {
 	ctrl := gomock.NewController(t)
 	setupEventRecorder(t)
 	return ctrl,
