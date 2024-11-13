@@ -16,9 +16,10 @@ package publisher
 
 import (
 	"context"
-	ec2metadata "github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 	"sync"
 	"time"
+
+	ec2metadata "github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
