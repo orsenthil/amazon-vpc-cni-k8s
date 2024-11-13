@@ -1,13 +1,1 @@
-# github.com/aws/amazon-vpc-cni-k8s/pkg/awsutils [github.com/aws/amazon-vpc-cni-k8s/pkg/awsutils.test]
-pkg/awsutils/awsutils_test.go:174:53: cannot use mockMetadata (variable of type FakeIMDS) as EC2MetadataIface value in struct literal: FakeIMDS does not implement EC2MetadataIface (missing method GetMetadata)
-pkg/awsutils/awsutils_test.go:174:76: cannot use mockEC2 (variable of type *mock_ec2wrapper.MockEC2) as *ec2.Client value in struct literal
-pkg/awsutils/awsutils_test.go:203:54: cannot use mockMetadata (variable of type FakeIMDS) as EC2MetadataIface value in struct literal: FakeIMDS does not implement EC2MetadataIface (missing method GetMetadata)
-pkg/awsutils/awsutils_test.go:203:77: cannot use mockEC2 (variable of type *mock_ec2wrapper.MockEC2) as *ec2.Client value in struct literal
-pkg/awsutils/awsutils_test.go:222:53: cannot use mockMetadata (variable of type FakeIMDS) as EC2MetadataIface value in struct literal: FakeIMDS does not implement EC2MetadataIface (missing method GetMetadata)
-pkg/awsutils/awsutils_test.go:238:53: cannot use mockMetadata (variable of type FakeIMDS) as EC2MetadataIface value in struct literal: FakeIMDS does not implement EC2MetadataIface (missing method GetMetadata)
-pkg/awsutils/awsutils_test.go:256:53: cannot use mockMetadata (variable of type FakeIMDS) as EC2MetadataIface value in struct literal: FakeIMDS does not implement EC2MetadataIface (missing method GetMetadata)
-pkg/awsutils/awsutils_test.go:270:45: cannot use mockEC2 (variable of type *mock_ec2wrapper.MockEC2) as *ec2.Client value in struct literal
-pkg/awsutils/awsutils_test.go:295:45: cannot use mockEC2 (variable of type *mock_ec2wrapper.MockEC2) as *ec2.Client value in struct literal
-pkg/awsutils/awsutils_test.go:362:46: cannot use mockEC2 (variable of type *mock_ec2wrapper.MockEC2) as *ec2.Client value in struct literal
-pkg/awsutils/awsutils_test.go:362:46: too many errors
 make: *** [Makefile:220: unit-test] Error 1

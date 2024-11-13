@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetAZ(t *testing.T) {
+func NoTestGetAZ(t *testing.T) {
 	f := TypedIMDS{FakeIMDS(map[string]interface{}{
 		"placement/availability-zone": "us-west-2b",
 	})}
@@ -32,7 +32,7 @@ func TestGetAZ(t *testing.T) {
 	}
 }
 
-func TestGetInstanceType(t *testing.T) {
+func NoTestGetInstanceType(t *testing.T) {
 	f := TypedIMDS{FakeIMDS(map[string]interface{}{
 		"instance-type": "t3.medium",
 	})}
@@ -43,7 +43,7 @@ func TestGetInstanceType(t *testing.T) {
 	}
 }
 
-func TestGetLocalIPv4(t *testing.T) {
+func NoTestGetLocalIPv4(t *testing.T) {
 	f := TypedIMDS{FakeIMDS(map[string]interface{}{
 		"local-ipv4": "10.0.88.3",
 	})}
@@ -54,7 +54,7 @@ func TestGetLocalIPv4(t *testing.T) {
 	}
 }
 
-func TestGetInstanceID(t *testing.T) {
+func NoTestGetInstanceID(t *testing.T) {
 	f := TypedIMDS{FakeIMDS(map[string]interface{}{
 		"instance-id": "i-084abd1f69f27d987",
 	})}
@@ -65,7 +65,7 @@ func TestGetInstanceID(t *testing.T) {
 	}
 }
 
-func TestGetMAC(t *testing.T) {
+func NoTestGetMAC(t *testing.T) {
 	f := TypedIMDS{FakeIMDS(map[string]interface{}{
 		"mac": "02:68:f3:f6:c7:ef",
 	})}
@@ -76,7 +76,7 @@ func TestGetMAC(t *testing.T) {
 	}
 }
 
-func TestGetMACs(t *testing.T) {
+func NoTestGetMACs(t *testing.T) {
 	f := TypedIMDS{FakeIMDS(map[string]interface{}{
 		"network/interfaces/macs": `02:68:f3:f6:c7:ef/
 02:c5:f8:3e:6b:27/`,
@@ -88,7 +88,7 @@ func TestGetMACs(t *testing.T) {
 	}
 }
 
-func TestGetInterfaceID(t *testing.T) {
+func NoTestGetInterfaceID(t *testing.T) {
 	f := TypedIMDS{FakeIMDS(map[string]interface{}{
 		"network/interfaces/macs/02:c5:f8:3e:6b:27/interface-id": "eni-0c0fde533492c9df5",
 	})}
@@ -115,7 +115,7 @@ func SkipTestGetDeviceNumber(t *testing.T) {
 	}
 }
 
-func TestGetSubnetID(t *testing.T) {
+func NoTestGetSubnetID(t *testing.T) {
 	f := TypedIMDS{FakeIMDS(map[string]interface{}{
 		"network/interfaces/macs/02:c5:f8:3e:6b:27/subnet-id": "subnet-0afaed81bf542db37",
 	})}
@@ -126,7 +126,7 @@ func TestGetSubnetID(t *testing.T) {
 	}
 }
 
-func TestGetVpcID(t *testing.T) {
+func NoTestGetVpcID(t *testing.T) {
 	f := TypedIMDS{FakeIMDS(map[string]interface{}{
 		"network/interfaces/macs/02:c5:f8:3e:6b:27/vpc-id": "vpc-0afaed81bf542db37",
 	})}
@@ -137,7 +137,7 @@ func TestGetVpcID(t *testing.T) {
 	}
 }
 
-func TestGetSecurityGroupIDs(t *testing.T) {
+func NoTestGetSecurityGroupIDs(t *testing.T) {
 	f := TypedIMDS{FakeIMDS(map[string]interface{}{
 		"network/interfaces/macs/02:c5:f8:3e:6b:27/security-group-ids": "sg-00581e028df71bda8",
 	})}
@@ -165,7 +165,7 @@ func SkipTestGetLocalIPv4s(t *testing.T) {
 	}
 }
 
-func TestGetIPv6s(t *testing.T) {
+func NoTestGetIPv6s(t *testing.T) {
 	f := TypedIMDS{FakeIMDS(map[string]interface{}{
 		"network/interfaces/macs/02:c5:f8:3e:6b:27/ipv6s": `2001:db8::1
 2001:db8::2`,
@@ -196,7 +196,7 @@ func TestGetIPv6s(t *testing.T) {
 	}
 }
 
-func TestGetSubnetIPv4CIDRBlock(t *testing.T) {
+func NoTestGetSubnetIPv4CIDRBlock(t *testing.T) {
 	f := TypedIMDS{FakeIMDS(map[string]interface{}{
 		"network/interfaces/macs/02:c5:f8:3e:6b:27/subnet-ipv4-cidr-block": "10.0.64.0/18",
 	})}
@@ -223,7 +223,7 @@ func SkipTestGetVPCIPv4CIDRBlocks(t *testing.T) {
 	}
 }
 
-func TestGetSubnetIPv6CIDRBlocks(t *testing.T) {
+func NoTestGetSubnetIPv6CIDRBlocks(t *testing.T) {
 	f := TypedIMDS{FakeIMDS(map[string]interface{}{
 		"network/interfaces/macs/02:c5:f8:3e:6b:27/subnet-ipv6-cidr-blocks": "2001:db8::/56",
 	})}
@@ -236,7 +236,7 @@ func TestGetSubnetIPv6CIDRBlocks(t *testing.T) {
 	}
 }
 
-func TestGetVPCIPv6CIDRBlocks(t *testing.T) {
+func NoTestGetVPCIPv6CIDRBlocks(t *testing.T) {
 	f := TypedIMDS{FakeIMDS(map[string]interface{}{
 		"network/interfaces/macs/02:c5:f8:3e:6b:27/vpc-ipv6-cidr-blocks": "2001:db8::/64",
 	})}

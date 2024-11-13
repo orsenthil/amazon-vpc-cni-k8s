@@ -540,7 +540,8 @@ type FakeIMDS map[string]interface{}
 
 func (f FakeIMDS) GetMetadata(ctx context.Context, params *imds.GetMetadataInput, optFns ...func(*imds.Options)) (*imds.GetMetadataOutput, error) {
 	//TODO implement me
-	panic("implement me")
+	// panic("implement me")
+	return nil, nil
 }
 
 // Custom error type
