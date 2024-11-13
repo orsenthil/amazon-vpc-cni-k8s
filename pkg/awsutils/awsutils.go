@@ -224,7 +224,7 @@ type EC2InstanceMetadataCache struct {
 	additionalENITags map[string]string
 
 	imds   TypedIMDS
-	ec2SVC *ec2.Client
+	ec2SVC ec2wrapper.EC2
 }
 
 // ENIMetadata contains information about an ENI
