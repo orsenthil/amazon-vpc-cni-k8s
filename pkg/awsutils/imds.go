@@ -15,6 +15,7 @@ package awsutils
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -219,8 +220,11 @@ func (typedimds TypedIMDS) GetMAC(ctx context.Context) (string, error) {
 // GetMACs returns the interface addresses attached to the instance.
 func (typedimds TypedIMDS) GetMACs(ctx context.Context) ([]string, error) {
 	list, err := typedimds.getList(ctx, "network/interfaces/macs")
+	fmt.Printf("I am trying to get MACs %v", list)
+	fmt.Printf("And I got error %v", err)
 	if err != nil {
-		if imdsErr, ok := err.(*imdsRequestError); ok {
+		var imdsErr *imdsRequestError
+		if errors.As(err, &imdsErr) {
 			log.Warnf("%v", err)
 			return nil, imdsErr.err
 		}
@@ -238,7 +242,8 @@ func (typedimds TypedIMDS) GetMACImdsFields(ctx context.Context, mac string) ([]
 	key := fmt.Sprintf("network/interfaces/macs/%s", mac)
 	list, err := typedimds.getList(ctx, key)
 	if err != nil {
-		if imdsErr, ok := err.(*imdsRequestError); ok {
+		var imdsErr *imdsRequestError
+		if errors.As(err, &imdsErr) {
 			log.Warnf("%v", err)
 			return nil, imdsErr.err
 		}
