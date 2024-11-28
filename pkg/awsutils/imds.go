@@ -479,21 +479,20 @@ func (typedimds TypedIMDS) GetIPv4Prefixes(ctx context.Context, mac string) ([]n
 
 	fmt.Printf("type of the error %T\n", err)
 
-	fmt.Printf("Original error type: %T", err)
-	fmt.Printf("Original error: %v", err)
+	fmt.Printf("Original error type: %T \n", err)
+	fmt.Printf("Original error: %v \n", err)
 
 	var oe *smithy.OperationError
 	if errors.As(err, &oe) {
-		fmt.Printf("Found OperationError: %v", oe)
+		fmt.Printf("Found OperationError: %v \n", oe)
 	}
 
 	var imdsErr *imdsRequestError
 	if errors.As(err, &imdsErr) {
-		fmt.Printf("Found imdsRequestError: %v", imdsErr)
+		fmt.Printf("Found imdsRequestError: %v\n", imdsErr)
 	}
 
 	if err != nil {
-		var imdsErr *imdsRequestError
 		if errors.As(err, &imdsErr) || errors.As(err, &oe) {
 			if IsNotFound(imdsErr.err) {
 				return nil, nil
