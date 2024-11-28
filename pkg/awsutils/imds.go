@@ -15,7 +15,6 @@ package awsutils
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net"
