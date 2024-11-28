@@ -480,10 +480,9 @@ func (typedimds TypedIMDS) GetIPv4Prefixes(ctx context.Context, mac string) ([]n
 	// verify the type of error
 	log.Warnf("type of the error %T", err)
 	fmt.Printf("type of the error %T\n", err)
-
 	if err != nil {
 		var imdsErr *imdsRequestError
-		if errors.As(err, &smithy.OperationError{}) {
+		if errors.As(err, imdsErr) {
 			if IsNotFound(imdsErr.err) {
 				return nil, nil
 			}
