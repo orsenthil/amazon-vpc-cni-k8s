@@ -68,6 +68,7 @@ func _main() int {
 		return 1
 	}
 
+	log.Debug("Debugging Session - 1 UTC 15:25")
 	ipamContext, err := ipamd.New(k8sClient)
 	if err != nil {
 		log.Errorf("Initialization failure: %v", err)

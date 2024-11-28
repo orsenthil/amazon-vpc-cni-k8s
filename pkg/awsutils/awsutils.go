@@ -584,6 +584,7 @@ func (cache *EC2InstanceMetadataCache) GetAttachedENIs() (eniList []ENIMetadata,
 
 	enis := make([]ENIMetadata, len(macs))
 	// retrieve the attached ENIs
+	fmt.Printf("SENTHIL: FAILED TO RETRIEVE ENI METADATA")
 	for i, mac := range macs {
 		enis[i], err = cache.getENIMetadata(mac)
 		if err != nil {
@@ -601,22 +602,29 @@ func (cache *EC2InstanceMetadataCache) getENIMetadata(eniMAC string) (ENIMetadat
 	var deviceNum int
 
 	eniID, err := cache.imds.GetInterfaceID(ctx, eniMAC)
+	log.Debug("SENTHIL Getting ENI ID")
 	if err != nil {
 		awsAPIErrInc("GetInterfaceID", err)
 		return ENIMetadata{}, err
 	}
 
+	log.Debugf("SENTHIL Found ENI ID address: %s", eniID)
+
 	deviceNum, err = cache.imds.GetDeviceNumber(ctx, eniMAC)
+	log.Debug("SENTHIL Getting Device Number")
 	if err != nil {
 		awsAPIErrInc("GetDeviceNumber", err)
 		return ENIMetadata{}, err
 	}
+	log.Debugf("SENTHIL Found Device Number: %d", deviceNum)
 
 	primaryMAC, err := cache.imds.GetMAC(ctx)
+	log.Debug("SENTHIL GETTING PRIMARY MAC")
 	if err != nil {
 		awsAPIErrInc("GetMAC", err)
 		return ENIMetadata{}, err
 	}
+	log.Debugf("SENTHIL Found primary MAC address: %s", primaryMAC)
 	if eniMAC == primaryMAC && deviceNum != 0 {
 		// Can this even happen? To be backwards compatible, we will always use 0 here and log an error.
 		log.Errorf("Device number of primary ENI is %d! Forcing it to be 0 as expected", deviceNum)
@@ -627,10 +635,12 @@ func (cache *EC2InstanceMetadataCache) getENIMetadata(eniMAC string) (ENIMetadat
 
 	// Get IMDS fields for the interface
 	macImdsFields, err := cache.imds.GetMACImdsFields(ctx, eniMAC)
+	log.Debug("Getting MAC IMDS Fields")
 	if err != nil {
 		awsAPIErrInc("GetMACImdsFields", err)
 		return ENIMetadata{}, err
 	}
+	log.Debugf("Found IMDS fields for interface: %v", macImdsFields)
 	ipInfoAvailable := false
 	// Efa-only interfaces do not have any ipv4s or ipv6s associated with it. If we don't find any local-ipv4 or ipv6 info in imds we assume it to be efa-only interface and validate this later via ec2 call
 	for _, field := range macImdsFields {
@@ -640,6 +650,7 @@ func (cache *EC2InstanceMetadataCache) getENIMetadata(eniMAC string) (ENIMetadat
 				awsAPIErrInc("GetLocalIPv4s", err)
 				return ENIMetadata{}, err
 			}
+			log.Debugf("Found local imds IPv4 addresses: %v", imdsIPv4s)
 			if len(imdsIPv4s) > 0 {
 				ipInfoAvailable = true
 				log.Debugf("Found IPv4 addresses associated with interface. This is not efa-only interface")
@@ -674,24 +685,30 @@ func (cache *EC2InstanceMetadataCache) getENIMetadata(eniMAC string) (ENIMetadat
 
 	// Get IPv4 and IPv6 addresses assigned to interface
 	cidr, err := cache.imds.GetSubnetIPv4CIDRBlock(ctx, eniMAC)
+	log.Debug("FINDING SUBNET CIDR")
 	if err != nil {
 		awsAPIErrInc("GetSubnetIPv4CIDRBlock", err)
 		return ENIMetadata{}, err
 	}
+	log.Debugf("FOUND SUBNET CIDR: %s", cidr)
 
 	imdsIPv4s, err := cache.imds.GetLocalIPv4s(ctx, eniMAC)
+	log.Debug("Finding Local IPv4s")
 	if err != nil {
 		awsAPIErrInc("GetLocalIPv4s", err)
 		return ENIMetadata{}, err
 	}
+	log.Debugf("Found local imds IPv4 addresses: %v", imdsIPv4s)
 
 	ec2ip4s := make([]ec2types.NetworkInterfacePrivateIpAddress, len(imdsIPv4s))
+	log.Debug("Finding ec2 IPv4s")
 	for i, ip4 := range imdsIPv4s {
 		ec2ip4s[i] = ec2types.NetworkInterfacePrivateIpAddress{
 			Primary:          aws.Bool(i == 0),
 			PrivateIpAddress: aws.String(ip4.String()),
 		}
 	}
+	log.Debugf("Found ec2 IPv4 addresses: %v", ec2ip4s)
 
 	var ec2ip6s []ec2types.NetworkInterfaceIpv6Address
 	var subnetV6Cidr string
@@ -748,6 +765,7 @@ func (cache *EC2InstanceMetadataCache) getENIMetadata(eniMAC string) (ENIMetadat
 			})
 		}
 	}
+	log.Debugf("Found ec2 IPv4 prefixes: %v", ec2ipv4Prefixes)
 
 	return ENIMetadata{
 		ENIID:          eniID,
