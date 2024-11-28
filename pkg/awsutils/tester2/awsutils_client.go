@@ -175,6 +175,7 @@ func (cache *Client) getENIMetadata(eniMAC string) (awsutils.ENIMetadata, error)
 		// primary ENI.
 		imdsIPv4Prefixes, err := cache.imds.GetIPv4Prefixes(ctx, eniMAC)
 		log.Debugf("Getting IPV4 Prefixes")
+		log.Debugf("Getting an error %T", err)
 		if err != nil {
 			return awsutils.ENIMetadata{}, err
 		}
