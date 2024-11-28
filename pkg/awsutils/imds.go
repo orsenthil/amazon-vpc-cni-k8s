@@ -461,7 +461,8 @@ func (typedimds TypedIMDS) GetLocalIPv4s(ctx context.Context, mac string) ([]net
 	key := fmt.Sprintf("network/interfaces/macs/%s/local-ipv4s", mac)
 	ips, err := typedimds.getIPs(ctx, key)
 	if err != nil {
-		if imdsErr, ok := err.(*imdsRequestError); ok {
+		var imdsErr *imdsRequestError
+		if errors.As(err, &imdsErr) {
 			log.Warnf("%v", err)
 			return nil, imdsErr.err
 		}

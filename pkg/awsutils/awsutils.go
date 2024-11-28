@@ -701,7 +701,9 @@ func (cache *EC2InstanceMetadataCache) getENIMetadata(eniMAC string) (ENIMetadat
 	log.Debugf("Found local imds IPv4 addresses: %v", imdsIPv4s)
 
 	ec2ip4s := make([]ec2types.NetworkInterfacePrivateIpAddress, len(imdsIPv4s))
+	log.Debugf("Found ec2 IPv4 addresses: %v", ec2ip4s)
 	log.Debug("Finding ec2 IPv4s")
+	log.Debug("SENTHIL - Finding a Problem after this statement.")
 	for i, ip4 := range imdsIPv4s {
 		ec2ip4s[i] = ec2types.NetworkInterfacePrivateIpAddress{
 			Primary:          aws.Bool(i == 0),
