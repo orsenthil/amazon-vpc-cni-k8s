@@ -476,14 +476,25 @@ func (typedimds TypedIMDS) GetIPv4Prefixes(ctx context.Context, mac string) ([]n
 	fmt.Printf("Getting the prefixes for mac: %s\n", mac)
 	key := fmt.Sprintf("network/interfaces/macs/%s/ipv4-prefix", mac)
 	prefixes, err := typedimds.getCIDRs(ctx, key)
+
 	fmt.Printf("type of the error %T\n", err)
+
+	fmt.Printf("Original error type: %T", err)
+	fmt.Printf("Original error: %v", err)
+
+	var oe *smithy.OperationError
+	if errors.As(err, &oe) {
+		fmt.Printf("Found OperationError: %v", oe)
+	}
+
+	var imdsErr *imdsRequestError
+	if errors.As(err, &imdsErr) {
+		fmt.Printf("Found imdsRequestError: %v", imdsErr)
+	}
+
 	if err != nil {
 		var imdsErr *imdsRequestError
-		if IsNotFound(err) {
-			fmt.Printf("No prefixes found for mac: %s\n", mac)
-			return nil, nil
-		}
-		if errors.As(err, &imdsErr) {
+		if errors.As(err, &imdsErr) || errors.As(err, &oe) {
 			if IsNotFound(imdsErr.err) {
 				return nil, nil
 			}
