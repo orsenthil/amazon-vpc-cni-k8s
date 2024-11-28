@@ -41,50 +41,36 @@ type TypedIMDS struct {
 
 // imdsRequestError to provide the caller on the request status
 type imdsRequestError struct {
+	error
+	smithy.APIError
 	requestKey string
 	err        error
-	code       string            // Added to support SDK V2 APIError interface
-	fault      smithy.ErrorFault // Added to support SDK V2 APIError interface
 }
-
-var _ error = &imdsRequestError{}
 
 func newIMDSRequestError(requestKey string, err error) *imdsRequestError {
 	return &imdsRequestError{
 		requestKey: requestKey,
 		err:        err,
-		code:       "IMDSRequestError",  // default code
-		fault:      smithy.FaultUnknown, // default fault
 	}
 }
 
-// Constructor with explicit code and fault
-func newIMDSRequestErrorWithDetails(requestKey string, err error, code string, fault smithy.ErrorFault) *imdsRequestError {
-	return &imdsRequestError{
-		requestKey: requestKey,
-		err:        err,
-		code:       code,
-		fault:      fault,
-	}
-}
-
+// Implement error interface
 func (e *imdsRequestError) Error() string {
 	return fmt.Sprintf("failed to retrieve %s from instance metadata %v", e.requestKey, e.err)
 }
 
+// Implement Unwrap for error wrapping
 func (e *imdsRequestError) Unwrap() error {
 	return e.err
 }
 
-// Implement smithy.APIError interface
-
+// Implement smithy.APIError interface methods
 func (e *imdsRequestError) ErrorCode() string {
-	// If wrapped error is an APIError, delegate to it
 	var apiErr smithy.APIError
 	if errors.As(e.err, &apiErr) {
 		return apiErr.ErrorCode()
 	}
-	return e.code
+	return "IMDSRequestError"
 }
 
 func (e *imdsRequestError) ErrorMessage() string {
@@ -92,13 +78,14 @@ func (e *imdsRequestError) ErrorMessage() string {
 }
 
 func (e *imdsRequestError) ErrorFault() smithy.ErrorFault {
-	// If wrapped error is an APIError, delegate to it
 	var apiErr smithy.APIError
 	if errors.As(e.err, &apiErr) {
 		return apiErr.ErrorFault()
 	}
-	return e.fault
+	return smithy.FaultUnknown
 }
+
+var _ error = &imdsRequestError{}
 
 func (e *imdsRequestError) HTTPStatusCode() int {
 	if resp, ok := e.err.(interface{ HTTPStatusCode() int }); ok {
@@ -477,21 +464,18 @@ func (typedimds TypedIMDS) GetIPv4Prefixes(ctx context.Context, mac string) ([]n
 	key := fmt.Sprintf("network/interfaces/macs/%s/ipv4-prefix", mac)
 	prefixes, err := typedimds.getCIDRs(ctx, key)
 
-	fmt.Printf("type of the error %T\n", err)
-
-	fmt.Printf("Original error type: %T \n", err)
-	fmt.Printf("Original error: %v \n", err)
-
-	var oe *smithy.OperationError
-	if errors.As(err, &oe) {
-		fmt.Printf("Found OperationError: %v \n", oe)
-	}
-
 	var imdsErr *imdsRequestError
+	var oe *smithy.OperationError
+
 	imdsErr = new(imdsRequestError)
+	oe = new(smithy.OperationError)
 
 	if errors.As(err, &imdsErr) {
 		fmt.Printf("Found imdsRequestError: %v\n", imdsErr)
+	}
+
+	if errors.As(err, &oe) {
+		fmt.Printf("Found OperationError: %v\n", oe)
 	}
 
 	if err != nil {
