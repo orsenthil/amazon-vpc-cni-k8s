@@ -473,20 +473,17 @@ func (typedimds TypedIMDS) GetLocalIPv4s(ctx context.Context, mac string) ([]net
 
 // GetIPv4Prefixes returns the IPv4 prefixes delegated to this interface
 func (typedimds TypedIMDS) GetIPv4Prefixes(ctx context.Context, mac string) ([]net.IPNet, error) {
-	log.Debugf("Getting the prefixes for mac: %s", mac)
+	fmt.Printf("Getting the prefixes for mac: %s\n", mac)
 	key := fmt.Sprintf("network/interfaces/macs/%s/ipv4-prefix", mac)
 	prefixes, err := typedimds.getCIDRs(ctx, key)
-	log.Debugf("Got the prefixes: %v", prefixes)
+	log.Warnf("Got the prefixes: %v", prefixes)
 	// verify the type of error
-	log.Debugf("type of the error %T", err)
+	log.Warnf("type of the error %T", err)
+	fmt.Printf("type of the error %T\n", err)
 
 	if err != nil {
-		if IsNotFound(err) {
-			return nil, nil
-		}
-
 		var imdsErr *imdsRequestError
-		if errors.As(err, &imdsErr) {
+		if errors.As(err, &smithy.OperationError{}) {
 			if IsNotFound(imdsErr.err) {
 				return nil, nil
 			}
@@ -606,6 +603,13 @@ func IsNotFoundResponse(err error) bool {
 func IsNotFound(err error) bool {
 	if err == nil {
 		return false
+	}
+
+	// Check for OperationError
+	var oe *smithy.OperationError
+	if errors.As(err, &oe) {
+		// Check if the error message contains status code 404
+		return strings.Contains(oe.Error(), "StatusCode: 404")
 	}
 
 	// Check for AWS ResponseError first
