@@ -157,7 +157,7 @@ func (cache *Client) getENIMetadata(eniMAC string) (awsutils.ENIMetadata, error)
 	log.Debugf("Found ec2 IPv4 addresses: %v", ec2ip4s)
 
 	for _, ec2ipv4 := range ec2ip4s {
-		log.Debugf("private ip", *ec2ipv4.PrivateIpAddress)
+		log.Debugf("private ip %v", *ec2ipv4.PrivateIpAddress)
 	}
 
 	var ec2ip6s []ec2types.NetworkInterfaceIpv6Address

@@ -475,8 +475,15 @@ func (typedimds TypedIMDS) GetLocalIPv4s(ctx context.Context, mac string) ([]net
 func (typedimds TypedIMDS) GetIPv4Prefixes(ctx context.Context, mac string) ([]net.IPNet, error) {
 	key := fmt.Sprintf("network/interfaces/macs/%s/ipv4-prefix", mac)
 	prefixes, err := typedimds.getCIDRs(ctx, key)
+	log.Debugf("Got the prefixes: %v", prefixes)
+	// verify the type of error
+	log.Debugf("type of the error %T", err)
 
 	if err != nil {
+		if IsNotFound(err) {
+			return nil, nil
+		}
+
 		var imdsErr *imdsRequestError
 		if errors.As(err, &imdsErr) {
 			if IsNotFound(imdsErr.err) {
