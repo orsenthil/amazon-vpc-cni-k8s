@@ -473,6 +473,7 @@ func (typedimds TypedIMDS) GetLocalIPv4s(ctx context.Context, mac string) ([]net
 
 // GetIPv4Prefixes returns the IPv4 prefixes delegated to this interface
 func (typedimds TypedIMDS) GetIPv4Prefixes(ctx context.Context, mac string) ([]net.IPNet, error) {
+	log.Debugf("Getting the prefixes for mac: %s", mac)
 	key := fmt.Sprintf("network/interfaces/macs/%s/ipv4-prefix", mac)
 	prefixes, err := typedimds.getCIDRs(ctx, key)
 	log.Debugf("Got the prefixes: %v", prefixes)
