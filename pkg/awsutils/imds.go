@@ -477,7 +477,8 @@ func (typedimds TypedIMDS) GetIPv4Prefixes(ctx context.Context, mac string) ([]n
 	prefixes, err := typedimds.getCIDRs(ctx, key)
 
 	if err != nil {
-		if imdsErr, ok := err.(*imdsRequestError); ok {
+		var imdsErr *imdsRequestError
+		if errors.As(err, &imdsErr) {
 			if IsNotFound(imdsErr.err) {
 				return nil, nil
 			}

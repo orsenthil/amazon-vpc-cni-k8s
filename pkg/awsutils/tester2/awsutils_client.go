@@ -156,12 +156,17 @@ func (cache *Client) getENIMetadata(eniMAC string) (awsutils.ENIMetadata, error)
 	}
 	log.Debugf("Found ec2 IPv4 addresses: %v", ec2ip4s)
 
+	for _, ec2ipv4 := range ec2ip4s {
+		log.Debugf("private ip", *ec2ipv4.PrivateIpAddress)
+	}
+
 	var ec2ip6s []ec2types.NetworkInterfaceIpv6Address
 	var subnetV6Cidr string
 
 	var ec2ipv4Prefixes []ec2types.Ipv4PrefixSpecification
 	var ec2ipv6Prefixes []ec2types.Ipv6PrefixSpecification
 
+	log.Debugf("Getting Prefixes")
 	// If IPv6 is enabled, get attached v6 prefixes.
 	if eniMAC != primaryMAC {
 		// Get prefix on primary ENI when custom networking is enabled is not needed.
@@ -169,9 +174,11 @@ func (cache *Client) getENIMetadata(eniMAC string) (awsutils.ENIMetadata, error)
 		// the prefix since recommendation is to terminate the nodes and that would have deleted the prefix on the
 		// primary ENI.
 		imdsIPv4Prefixes, err := cache.imds.GetIPv4Prefixes(ctx, eniMAC)
+		log.Debugf("Getting IPV4 Prefixes")
 		if err != nil {
 			return awsutils.ENIMetadata{}, err
 		}
+		log.Debugf("Completed getting IPV4 Prefixes.")
 		for _, ipv4prefix := range imdsIPv4Prefixes {
 			ec2ipv4Prefixes = append(ec2ipv4Prefixes, ec2types.Ipv4PrefixSpecification{
 				Ipv4Prefix: aws.String(ipv4prefix.String()),
